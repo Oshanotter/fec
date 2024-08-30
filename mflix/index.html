@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1, initial-scale=1, minimal-ui, viewport-fit=cover">
+    <title>Mflix</title>
+    <!--- include the following script to make the youtube player work--->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css">
+
+    <!--- Declare the icons for the webpage --->
+    <link rel="icon" href="icons/masked.png" />
+    <link rel="apple-touch-icon" href="icons/full.png">
+    <link rel="mask-icon" href="icons/masked.png" color="#000000">
+</head>
+
+<body>
+
+    <div id="searchPage" class="main hidden">
+        <div style="margin: auto; width: 80%; position: relative; margin-bottom: 1em;">
+            <h2 style="margin-bottom: 0;">Search TMDB</h2>
+            <small>*Note that not all movies or tv shows are avalible to watch</small>
+            <input type="text" id="searchInput" placeholder="Search for a movie or TV show..." autocomplete="off">
+            <img src="icons/general/search.svg" alt="img-search" style="position: absolute; right: 1em; bottom: 0.5em; height: 1.5em; pointer-events: none;">
+            <div id="searchDropdown"></div>
+        </div>
+        <div class="container" data-lastpagenum="0" data-loading="false"></div>
+        <div class="spacer"></div>
+    </div>
+
+    <div id="homePage" class="main">
+        <h2>Trending Movies</h2>
+        <div class="container"></div>
+        <div class="spacer"></div>
+    </div>
+
+    <div id="moviesPage" class="main hidden">
+        <h2>Newly Added Movies</h2>
+        <div class="container" data-lastpagenum="0" data-loading="false"></div>
+        <div class="spacer"></div>
+    </div>
+
+    <div id="tvShowsPage" class="main hidden">
+        <h2>Newly Added TV Shows</h2>
+        <div class="container" data-lastpagenum="0" data-loading="false"></div>
+        <div class="spacer"></div>
+    </div>
+
+    <div id="myListsPage" class="main hidden">
+        <h2>My Lists</h2>
+        <div style="width: 80%; height: 10%; text-align: center;">My Lists section coming soon...</div>
+        <div class="spacer"></div>
+    </div>
+
+
+    <div class="sidebar">
+        <div id="search" onclick="displayPage('searchPage')">
+            <img src="icons/general/search.svg" alt="img-search">
+            <div>Search</div>
+        </div>
+        <div id="home" class="active" onclick="displayPage('homePage')">
+            <img src="icons/general/home.svg" alt="img-home">
+            <div>Home</div>
+        </div>
+        <div id="movies" onclick="displayPage('moviesPage')">
+            <img src="icons/general/movie.svg" alt="img-movie">
+            <div>Movies</div>
+        </div>
+        <div id="tvShows" onclick="displayPage('tvShowsPage')">
+            <img src="icons/general/tv.svg" alt="img-tv">
+            <div>TV Shows</div>
+        </div>
+        <div id="myLists" onclick="displayPage('myListsPage')">
+            <img src="icons/general/list.svg" alt="img-list">
+            <div>My Lists</div>
+        </div>
+    </div>
+
+
+    <div id="infoPage" class="hidden">
+        <div id="infoSplit1">
+            <h1 style="width: 90%; margin: 5% auto 0% auto;" class="noFlex">Title of Film</h1>
+            <div id="infoCluster" style="width: 90%; margin: 2% auto;" class="noFlex">
+                <table style="width: 100%; font-weight: bold;">
+                    <tr>
+                        <td>Sep 20, 1987</td>
+                        <td>10 / 10</td>
+                    </tr>
+                    <tr>
+                        <td>PG-13</td>
+                        <td>1h 48m</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="width: 90%; margin: 0% auto 0% auto;" class="flex">
+                <div class="flex-content">Description of the movie or series. This should be a few sentences long. Some desvriptions are longer than others though.</div>
+            </div>
+            <div id="buttonContainer" class="noFlex">
+                <div id="playButton" class="button" onclick="" style="padding: 0.5em;">Play</div>
+                <div id="resumeButton" class="button" onclick="resumeMedia()">Resume</div>
+                <div id="addToListButton" class="button" onclick="addToList()">Add To List</div>
+                <div style="display: flex; flex-direction: row; justify-content: space-between;">
+                    <div id="stopTrailer" class="button" style="width: calc(50% - 1vh)" onclick="startTrailer()">Start Trailer</div>
+                    <div id="restartTrailer" class="button" style="width: calc(50% - 1vh)" onclick="restartTrailer()">Restart Trailer</div>
+                </div>
+                <div id="backButton" class="button" onclick="resetInfoPage()">Back</div>
+            </div>
+        </div>
+        <div id="infoSplit2">
+            <div id="ytTrailerPlayer" style="display:none; width: 100%; height: 100%;"></div>
+        </div>
+    </div>
+    <div id="iframeContainer" class="hidden">
+        <div id="xMovie" onclick="stopMovie()">x</div>
+
+        <iframe id="movieIframe" src="" allowfullscreen="yes" frameborder="no" scrolling="no" autoplay="yes"></iframe>
+    </div>
+
+    <div id="loginPage">
+        <img src="icons/logo.png">
+        <h1>Login To Continue</h1>
+        <input type="text" id="username" name="username" placeholder="Username">
+        <input type="text" id="password" name="password" placeholder="Password">
+        <div></div>
+        <div onclick="login()">
+            Login
+        </div>
+        <div>
+            <img src="icons/general/loading_wheel.gif" class="hidden">
+        </div>
+    </div>
+
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+    <script src="script.js" defer></script>
+
+</body>
+
+</html>

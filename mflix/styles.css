@@ -1,0 +1,543 @@
+:root {
+  /* define some css variables */
+  --mflixBlue: #011d57;
+  --mflixWhite: #EBEBEB;
+  --mflixOrange: #ff8648;
+  --mflixGrey: #333333;
+  --mflixDarkOrange: #ff6a00;
+}
+
+body,
+html {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  overflow: hidden;
+  height: 100%;
+  background-color: var(--mflixBlue);
+  color: var(--mflixWhite);
+}
+
+.sidebar {
+  width: 200px;
+  height: 100vh;
+  background-color: var(--mflixOrange);
+  background-color: var(--mflixGrey) !important;
+  float: left;
+
+  img {
+    filter: invert(98%) sepia(1%) saturate(215%) hue-rotate(84deg) brightness(115%) contrast(84%);
+    /* this filter produces var(--mflixWhite) */
+  }
+
+  div {
+    background-color: inherit;
+  }
+
+  div.active {
+    background-color: var(--mflixOrange);
+  }
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  /*align-content: space-evenly;
+    gap: 15px;*/
+  /*background-color: var(--mflixBlue);
+  color: var(--mflixWhite);*/
+}
+
+/*.container img {
+    width: 150px;
+    margin: 10px 5px 0px 5px;
+    cursor: pointer;
+    border-radius: 15px;
+}*/
+.posterContainer {
+  width: 150px;
+  margin: 10px 5px 0px 5px;
+  cursor: pointer;
+  position: relative;
+  border-radius: 15px;
+  border: 2px solid var(--mflixBlue);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+
+  /*z-index: -1;*/
+  img, span {
+    border-radius: 15px;
+    width: 95%;
+    aspect-ratio: 2 / 3;
+    /* the height is 1.5 times larger than the width */
+    margin: auto;
+    margin-top: calc(150px * 0.025);
+  }
+
+  div:nth-of-type(1) {
+    background-color: var(--mflixOrange);
+    position: absolute;
+    top: 2%;
+    left: 5%;
+    font-size: 0.75em;
+    display: inline;
+    border-radius: 5px;
+    border: 2px solid var(--mflixWhite);
+    padding: 0px 5px;
+  }
+
+  div:nth-of-type(1):empty {
+    /* if the quality element is empty, hide it by disabling the border */
+    border: none;
+  }
+
+  div:nth-of-type(2) {
+    line-height: 1.2em;
+    height: calc(1.2em * 2);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 2;
+    margin-bottom: 0.5em;
+  }
+}
+
+.posterContainer:hover:not(.noHover) {
+  background: radial-gradient(rgba(255, 255, 255, 0), var(--mflixOrange));
+  transform: scale(1.05);
+  border: 2px solid var(--mflixWhite);
+}
+
+.hidden {
+  display: none !important;
+}
+
+#infoPage {
+  background-color: inherit;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  top: 0;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+}
+
+#infoSplit1 {
+  /*background-color: red;*/
+  width: 100vw;
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  h1 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 2;
+  }
+}
+
+#infoCluster {
+  color: var(--mflixOrange);
+}
+
+.noFlex {
+  flex: none;
+}
+
+.flex {
+  flex: 1;
+  /* This element will take up the remaining space */
+  position: relative;
+  /* Positioning context for the gradient overlay */
+  overflow: hidden;
+  /* Hide the gradient's overflow */
+}
+
+.flex-content {
+  height: 100%;
+  overflow: auto;
+  padding-bottom: 1em;
+}
+
+.flex::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1em;
+  /* Height of the gradient overlay */
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--mflixBlue));
+  pointer-events: none;
+  /* Ensure the gradient doesn't interfere with scrolling */
+}
+
+#infoSplit2 {
+  background-color: var(--mflixOrange);
+  width: 100vw;
+  height: 40vh;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+}
+
+@media (orientation: landscape) {
+  #infoPage {
+    flex-direction: row;
+    padding-left: env(safe-area-inset-left, 0px);
+    width: calc(100vw - env(safe-area-inset-left, 0px));
+  }
+
+  #infoSplit1 {
+    width: calc(30vw + env(safe-area-inset-left, 0px));
+    height: 100vh;
+  }
+
+  #infoSplit2 {
+    width: calc(70vw - env(safe-area-inset-left, 0px));
+    height: 100vh;
+  }
+
+  .flex {
+    max-height: 100%;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    width: 15vw;
+    padding-left: env(safe-area-inset-left, 0px);
+    border-right: 2px solid var(--mflixOrange);
+  }
+
+  .sidebar div {
+    display: flex;
+    flex-direction: row;
+    height: 3em;
+    align-items: center;
+    font-weight: bold;
+    cursor: pointer;
+    padding-left: env(safe-area-inset-left, 0px);
+    margin-left: calc(-1 * env(safe-area-inset-left, 0px));
+  }
+
+  .sidebar div img {
+    margin-left: 1vw;
+    margin-right: 1vw;
+  }
+
+  .sidebar div div {
+    margin-right: 1vw;
+  }
+
+  .sidebar div.active {
+    padding-right: 2vw !important;
+    margin-right: -2vw !important;
+    border-radius: 0px 15px 15px 0px;
+  }
+
+  .sidebar div.active img {
+    margin-left: 3vw;
+  }
+
+  .main {
+    margin-left: calc(15vw + env(safe-area-inset-left, 0px));
+    overflow: scroll;
+    height: 100%;
+  }
+
+  .spacer {
+    margin-bottom: 3vh;
+  }
+
+  #infoSplit2::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3vw;
+    height: 100vh;
+    /* Height of the gradient overlay */
+    background: linear-gradient(to left, rgba(255, 255, 255, 0), var(--mflixBlue));
+    pointer-events: none;
+    /* Ensure the gradient doesn't interfere with scrolling */
+  }
+}
+
+@media (orientation: portrait) {
+  .sidebar {
+    width: 100vw;
+    height: 10vh;
+    background-color: var(--mflixGrey);
+    color: #fff;
+    bottom: 0;
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    border-top: 2px solid var(--mflixOrange);
+  }
+
+  .sidebar div {
+    display: inline-block !important;
+    padding: 0px !important;
+    margin: 0px !important;
+    cursor: pointer;
+    width: 20vw;
+    height: 100%;
+  }
+
+  .sidebar div div {
+    display: none;
+    font-size: 0em;
+  }
+
+  .sidebar div img {
+    width: 50%;
+    height: auto;
+    margin: auto;
+    display: block;
+    margin-top: 25%;
+  }
+
+  .sidebar div.active {
+    padding-bottom: 2vh !important;
+    margin-top: -2vh !important;
+    border-radius: 15px 15px 0px 0px;
+  }
+
+  .main {
+    margin-left: 0px !important;
+    margin-bottom: 13vh;
+    height: 100%;
+    overflow: scroll;
+  }
+
+  .spacer {
+    margin-bottom: 13vh;
+  }
+
+  #infoSplit2::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3vh;
+    /* Height of the gradient overlay */
+    background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
+    pointer-events: none;
+    /* Ensure the gradient doesn't interfere with scrolling */
+  }
+}
+
+.button {
+  border: 2px solid var(--mflixOrange);
+  background-color: var(--mflixBlue);
+  border-radius: 10px;
+  max-width: 100%;
+  text-align: center;
+  vertical-align: middle;
+  margin: 1vh 1vh 0vh 1vh;
+  cursor: pointer;
+  padding: 0.25em;
+}
+
+.button:hover, .sidebar>div:hover, .searchDropdownItem:hover {
+  filter: brightness(1.3);
+  /* brighten the element on hover */
+}
+
+#buttonContainer {
+  width: 90%;
+  margin: 2% auto 5% auto;
+
+  #playButton {
+    background-color: var(--mflixOrange);
+    border-color: var(--mflixWhite);
+    font-weight: bold;
+  }
+}
+
+#movieIframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  overflow: hidden;
+}
+
+#iframeContainer {
+  width: 100vw;
+  height: 100%;
+  overflow: hidden;
+  top: 0;
+  position: fixed;
+  background-color: red;
+}
+
+#xMovie {
+  background-color: red;
+  width: 10vh;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  top: 0;
+  right: 0;
+  margin: 5vh;
+  font-size: 300%;
+  position: fixed;
+  border-radius: 1vh;
+}
+
+#searchInput {
+  width: 100%;
+  padding: 10px;
+  border-radius: 999px;
+  border: 2px solid var(--mflixOrange);
+  background-color: var(--mflixWhite);
+  box-sizing: border-box;
+  position: relative;
+  height: 3em;
+  margin-top: 1em;
+  font-size: 0.9em;
+}
+
+#searchDropdown {
+  border: 1px solid var(--mflixWhite);
+  border-radius: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  position: absolute;
+  background-color: var(--mflixGrey);
+  width: 100%;
+  padding-top: 1.5em;
+  margin-top: -1.5em;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  z-index: 1;
+}
+
+#searchDropdown:empty {
+  display: none !important;
+}
+
+.searchDropdownItem {
+  padding: 10px;
+  cursor: pointer;
+  width: 100%;
+  background-color: inherit;
+}
+
+#loginPage {
+  background-color: var(--mflixBlue);
+  color: var(--mflixWhite);
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  top: 0;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  img:nth-of-type(1) {
+    width: 300px;
+    height: auto;
+  }
+
+  input {
+    margin: 1vh 0vh 0vh 0vh;
+    border-radius: 5px;
+    border: 1px solid var(--mflixOrange);
+  }
+
+  div:nth-of-type(1) {
+    background-color: #ff9a91;
+    height: 5vh;
+    line-height: 5vh;
+    margin: 1vh 0vh 1vh 0vh;
+    border-radius: 3px;
+    color: #ff1500;
+    padding: 0 1em;
+  }
+
+  div:nth-of-type(1):empty {
+    /* the error element when it has no content */
+    padding: 0;
+  }
+
+  div:nth-of-type(2) {
+    background-color: var(--mflixOrange);
+    padding: 15px 30px 15px 30px;
+    border-radius: 999px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  div:nth-of-type(2):hover {
+    filter: brightness(1.3);
+    /* brighten the element on hover */
+  }
+
+  div:nth-of-type(3) {
+    width: 50px;
+    height: 50px;
+    margin-top: 3vh;
+
+    img {
+      width: 100%;
+      height: auto;
+    }
+  }
+}
+
+.main>h2 {
+  margin-left: 5%;
+}
+
+.loadingWave {
+  /*width: 50px;
+  height: 150px; */
+  background-color: #444;
+  position: relative;
+  overflow: hidden;
+}
+
+.loadingWave::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  /* Double the width of .loading */
+  height: 200%;
+  /* Double the height of .loading */
+  background: linear-gradient(135deg, #666, rgba(255, 255, 255, 0), #666, rgba(255, 255, 255, 0), #666);
+  animation: wave 3s linear infinite;
+}
+
+@keyframes wave {
+  0% {
+    transform: translate(-25%, -25%);
+  }
+
+  100% {
+    transform: translate(25%, 25%);
+  }
+}
