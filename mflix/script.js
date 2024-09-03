@@ -68,6 +68,13 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
       // get the backdrop of the movie or tv show
       var infoSplit2 = document.getElementById('infoSplit2');
       infoSplit2.style.backgroundImage = 'url("https://image.tmdb.org/t/p/original' + media.backdrop_path + '")';
+      if (!media.backdrop_path) {
+        var img = infoSplit2.querySelector('img');
+        img.classList.remove('hidden');
+      } else {
+        var img = infoSplit2.querySelector('img');
+        img.classList.add('hidden');
+      }
 
 
       // load the movie or tv show trailer
@@ -158,6 +165,14 @@ function resumeMedia() {
 
 
 function main() {
+  // add loading posters to each page before the actual media loads
+  appendLoadingPosters('homePage', 20);
+  appendLoadingPosters('homePage');
+  appendLoadingPosters('moviesPage', 20);
+  appendLoadingPosters('moviesPage');
+  appendLoadingPosters('tvShowsPage', 20);
+  appendLoadingPosters('tvShowsPage');
+
   // authenticate the current user immediately
   authenticate();
 
@@ -188,15 +203,41 @@ function main() {
         });
     }
   });
+
+  // add an event listener to the user profile element to display the dropdown when clicked
+  var userProfileDiv = document.querySelector('#header > div');
+  userProfileDiv.addEventListener('click', function() {
+    var dropdown = document.getElementById('userDropdownOptions');
+    dropdown.classList.remove('hidden');
+  });
+
+  userProfileDiv.addEventListener('mouseleave', function() {
+    var dropdown = document.getElementById('userDropdownOptions');
+    dropdown.classList.add('hidden');
+  });
+
+  // display search suggestions on the search page
+  loadSearchSuggestions();
+
 }
 
 function displayPage(pageID) {
   loadPageContent(pageID);
-  var currentTab = document.querySelectorAll('.active')[0];
-  currentTab.classList.remove('active');
-  var newTab = document.getElementById(pageID.replace('Page', ''));
-  newTab.classList.add('active');
-  var pageList = ['searchPage', 'homePage', 'moviesPage', 'tvShowsPage', 'myListsPage'];
+
+  // mark the selected page in the sidebar as active and remove the other active classes
+  try {
+    var currentTab = document.querySelectorAll('.active')[0];
+    currentTab.classList.remove('active');
+    var newTab = document.getElementById(pageID.replace('Page', ''));
+    newTab.classList.add('active');
+  } catch {
+    // the page is the settings page, so add the hidden class back to userDropdownOptions
+    var dropdown = document.getElementById('userDropdownOptions');
+    dropdown.classList.add('hidden');
+  }
+
+  // find the right page and make it visible, but hide the others
+  var pageList = ['searchPage', 'homePage', 'moviesPage', 'tvShowsPage', 'myListsPage', 'settingsPage'];
   for (i = 0; i < pageList.length; i++) {
     var id = pageList[i];
     var page = document.getElementById(id);
@@ -925,6 +966,8 @@ function authenticate() {
     loadPageContent('homePage');
     var loginPage = document.getElementById('loginPage');
     loginPage.classList.add("hidden");
+    var userProfileDiv = document.querySelector('#header > div > div');
+    userProfileDiv.innerText = getLocalStorage('username');
 
   } catch {
     var username = getLocalStorage('username');
@@ -1057,6 +1100,15 @@ function login(username, passwordHash) {
     });
 }
 
+function logout() {
+  // reset the local storage by passing no arguments to setLocalStorage()
+  setLocalStorage();
+
+  // reload the page
+  var homePage = document.location.origin + document.location.pathname;
+  document.location.href = homePage;
+}
+
 function setLocalStorage(keyPath, value) {
   var fecDict = JSON.parse(localStorage.getItem('FEC'));
   if (!fecDict) {
@@ -1100,14 +1152,16 @@ function stringToHash(string) {
 
 
 
-function appendLoadingPosters(mediaPageID) {
+function appendLoadingPosters(mediaPageID, repeatNum) {
   // creates loading posters to display at the bottom of the movies and tv shows page
 
   var container = document.getElementById(mediaPageID).querySelector('.container');
 
-  var numColumns = countColumns();
-  var numPosters = container.children.length;
-  var repeatNum = numColumns - (numPosters % numColumns);
+  if (!repeatNum) {
+    var numColumns = countColumns();
+    var numPosters = container.children.length;
+    var repeatNum = numColumns - (numPosters % numColumns);
+  }
 
   for (var i = 0; i < repeatNum; i++) {
     var mainElm = document.createElement('div');
@@ -1139,6 +1193,69 @@ function removeLoadingPosters(mediaPageID) {
   for (var i = 0; i < loadingPosters.length; i++) {
     loadingPosters[i].remove();
   }
+}
+
+
+
+function loadSearchSuggestions() {
+  var pageNum = Math.floor(Math.random() * 500);
+  var movieURL = "https://api.themoviedb.org/3/discover/movie?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
+  var tvURL = "https://api.themoviedb.org/3/discover/tv?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
+  console.log(movieURL)
+
+  Promise.all([
+      fetch(movieURL).then((response) => response.json()),
+      fetch(tvURL).then((response) => response.json())
+    ])
+    .then(([movies, tvShows]) => {
+      combinedResults = [...movies.results, ...tvShows.results];
+      console.log(combinedResults);
+      var shuffledList = shuffleList(combinedResults);
+      console.log(shuffledList);
+
+      // make a new element to display the search suggestions
+      var main = document.createElement('div');
+      main.id = "searchSuggestions";
+
+      var heading = document.createElement('h3');
+      heading.innerText = "Search Suggestions...";
+      main.appendChild(heading);
+
+      for (var i = 0; i < shuffledList.length; i++) {
+        var suggestion = document.createElement('div');
+        let title = shuffledList[i].title || shuffledList[i].name;
+        suggestion.innerText = title;
+        suggestion.onclick = function() {
+          document.getElementById('searchInput').value = title;
+          searchMoviesAndTvShows(title).then(dict => {
+              displaySearchResults(dict);
+              hideSearchDropdown();
+            })
+            .catch(error => {
+              console.error("Error fetching movies and TV shows:", error);
+            });
+        };
+        main.appendChild(suggestion);
+      }
+      var container = document.getElementById('searchPage').querySelector('.container');
+      container.innerHTML = '';
+      container.appendChild(main);
+    })
+    .catch(error => console.error('Error fetching data:', error));
+}
+
+function shuffleList(array) {
+  // Create a copy of the original array to avoid modifying it
+  const newArray = [...array];
+
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    // Swap newArray[i] and newArray[j]
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+
+  // Return the shuffled array
+  return newArray;
 }
 
 
