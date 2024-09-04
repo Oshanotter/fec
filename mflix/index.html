@@ -25,10 +25,10 @@
             <div>user.name</div>
             <img src="icons/general/account_circle.svg">
             <div id="userDropdownOptions" class="hidden">
-                <div onclick="displayPage('settingsPage'); event.stopPropagation();">
+                <div onclick="displayPage('settingsPage'); event.stopPropagation();" class="button">
                     Settings
                 </div>
-                <div onclick="logout(); event.stopPropagation();">
+                <div onclick="logout(); event.stopPropagation();" class="button">
                     Logout
                 </div>
             </div>
@@ -36,11 +36,11 @@
     </div>
 
     <div id="searchPage" class="main hidden">
-        <div style="margin: auto; width: 80%; position: relative; margin-bottom: 1em;">
-            <h2 style="margin-bottom: 0;">Search TMDB</h2>
+        <div>
+            <h2>Search TMDB</h2>
             <small>*Note that not all movies or tv shows are avalible to watch</small>
             <input type="text" id="searchInput" placeholder="Search for a movie or TV show..." autocomplete="off">
-            <img src="icons/general/search.svg" alt="img-search" style="position: absolute; right: 1em; bottom: 0.5em; height: 1.5em; pointer-events: none;">
+            <img src="icons/general/search.svg" alt="img-search">
             <div id="searchDropdown"></div>
         </div>
         <div class="container" data-lastpagenum="0" data-loading="false"></div>
@@ -78,24 +78,24 @@
     </div>
 
 
-    <div class="sidebar">
-        <div id="search" onclick="displayPage('searchPage')">
+    <div id="menubar">
+        <div id="search" onclick="displayPage('searchPage')" class="button">
             <img src="icons/general/search.svg" alt="img-search">
             <div>Search</div>
         </div>
-        <div id="home" class="active" onclick="displayPage('homePage')">
+        <div id="home" onclick="displayPage('homePage')" class="button active">
             <img src="icons/general/home.svg" alt="img-home">
             <div>Home</div>
         </div>
-        <div id="movies" onclick="displayPage('moviesPage')">
+        <div id="movies" onclick="displayPage('moviesPage')" class="button">
             <img src="icons/general/movie.svg" alt="img-movie">
             <div>Movies</div>
         </div>
-        <div id="tvShows" onclick="displayPage('tvShowsPage')">
+        <div id="tvShows" onclick="displayPage('tvShowsPage')" class="button">
             <img src="icons/general/tv.svg" alt="img-tv">
             <div>TV Shows</div>
         </div>
-        <div id="myLists" onclick="displayPage('myListsPage')">
+        <div id="myLists" onclick="displayPage('myListsPage')" class="button">
             <img src="icons/general/list.svg" alt="img-list">
             <div>My Lists</div>
         </div>
@@ -104,9 +104,9 @@
 
     <div id="infoPage" class="hidden">
         <div id="infoSplit1">
-            <h1 style="width: 90%; margin: 5% auto 0% auto;" class="noFlex">Title of Film</h1>
-            <div id="infoCluster" style="width: 90%; margin: 2% auto;" class="noFlex">
-                <table style="width: 100%; font-weight: bold;">
+            <h1 class="noFlex">Title of Film</h1>
+            <div id="infoCluster" class="noFlex">
+                <table>
                     <tr>
                         <td>Sep 20, 1987</td>
                         <td>10 / 10</td>
@@ -117,27 +117,27 @@
                     </tr>
                 </table>
             </div>
-            <div style="width: 90%; margin: 0% auto 0% auto;" class="flex">
-                <div class="flex-content">Description of the movie or series. This should be a few sentences long. Some desvriptions are longer than others though.</div>
+            <div id="descriptionContainer" class="flex">
+                <div id="descriptionContent">Description of the movie or series. This should be a few sentences long. Some descriptions are longer than others though.</div>
             </div>
             <div id="buttonContainer" class="noFlex">
-                <div id="playButton" class="button" onclick="" style="padding: 0.5em;">Play</div>
-                <div id="resumeButton" class="button" onclick="resumeMedia()">Resume</div>
-                <div id="addToListButton" class="button" onclick="addToList()">Add To List</div>
-                <div style="display: flex; flex-direction: row; justify-content: space-between;">
-                    <div id="stopTrailer" class="button" style="width: calc(50% - 1vh)" onclick="startTrailer()">Start Trailer</div>
-                    <div id="restartTrailer" class="button" style="width: calc(50% - 1vh)" onclick="restartTrailer()">Restart Trailer</div>
+                <div id="playButton" class="button" onclick=""><img src="icons/general/play_arrow.svg">Play</div>
+                <div id="resumeButton" class="button" onclick="resumeMedia()"><img src="icons/general/resume.svg">Resume</div>
+                <div id="addToListButton" class="button" onclick="addToList()"><img src="icons/general/playlist_add.svg">Add To List</div>
+                <div>
+                    <div id="stopTrailer" class="button" onclick="startTrailer()">Start Trailer</div>
+                    <div id="restartTrailer" class="button" onclick="restartTrailer()">Restart Trailer</div>
                 </div>
-                <div id="backButton" class="button" onclick="resetInfoPage()">Back</div>
+                <div id="backButton" class="button" onclick="resetInfoPage()"><img src="icons/general/arrow_back.svg">Back</div>
             </div>
         </div>
         <div id="infoSplit2">
-            <img src="icons/general/image.svg" alt="default-img" class="hidden">
-            <div id="ytTrailerPlayer" style="display:none; width: 100%; height: 100%;"></div>
+            <img src="icons/general/no_image.svg" alt="default-img" class="hidden">
+            <div id="ytTrailerPlayer"></div>
         </div>
     </div>
     <div id="iframeContainer" class="hidden">
-        <div id="xMovie" onclick="stopMovie()">x</div>
+        <div id="xMovie" onclick="stopMovie()" class="button"><img src="icons/general/close.svg" alt="X"></div>
 
         <iframe id="movieIframe" src="" allowfullscreen="yes" frameborder="no" scrolling="no" autoplay="yes"></iframe>
     </div>
@@ -148,7 +148,7 @@
         <input type="text" id="username" name="username" placeholder="Username">
         <input type="password" id="password" name="password" placeholder="Password">
         <div></div>
-        <div onclick="login()">
+        <div onclick="login()" class="button">
             Login
         </div>
         <div>

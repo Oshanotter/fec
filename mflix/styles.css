@@ -1,12 +1,25 @@
+/*
+
+BELOW ARE SOME VARIABLES THAT WILL HELP DEFINE VALUES FOR OTHER ELEMENTS
+
+*/
 :root {
-  /* define some css variables */
   --mflixBlue: #011d57;
   --mflixWhite: #EBEBEB;
   --mflixOrange: #ff8648;
   --mflixGrey: #333333;
   --mflixDarkOrange: #ff6a00;
+  /* this filter produces var(--mflixWhite) as long as the original image is #000000 */
+  --whiteFilter: invert(98%) sepia(1%) saturate(215%) hue-rotate(84deg) brightness(115%) contrast(84%);
+  /* this filter produces var(--mflixOrange) as long as the original image is #000000 */
+  --orangeFilter: invert(75%) sepia(32%) saturate(6103%) hue-rotate(329deg) brightness(104%) contrast(101%);
 }
 
+/*
+
+BELOW IS THE CSS THAT DEFINES HOW THE BODY AND HTML BEHAVE
+
+*/
 body,
 html {
   font-family: Arial, sans-serif;
@@ -17,6 +30,38 @@ html {
   color: var(--mflixWhite);
 }
 
+/*
+
+BELOW ARE SOME COMMONLY USED CLASSES
+
+*/
+.hidden {
+  display: none !important;
+}
+
+.button {
+  cursor: pointer;
+}
+
+.button:hover {
+  filter: brightness(1.3);
+  /* brighten the element on hover */
+}
+
+.noFlex {
+  flex: none;
+}
+
+.flex {
+  flex: 1;
+  /* This element will grow or shrink to take up the remaining space */
+}
+
+/*
+
+BELOW ARE SOME ELEMENTS RELATING TO THE HEADER
+
+*/
 #header {
   height: 3em;
   width: 94vw;
@@ -29,12 +74,13 @@ html {
   padding: 0 3vw;
 
   >img {
+    /* the logo in the top left */
     height: 90%;
     cursor: pointer;
-    margin-left: env(safe-area-inset-left, 0px);
   }
 
   >div {
+    /* the user profile element */
     height: 100%;
     display: flex;
     flex-direction: row;
@@ -42,19 +88,21 @@ html {
     cursor: pointer;
 
     img {
+      /* the user image */
       height: 70%;
       margin-left: 0.5em;
-      filter: invert(75%) sepia(32%) saturate(6103%) hue-rotate(329deg) brightness(104%) contrast(101%);
-      /* this filter produces var(--mflixOrange) */
+      filter: var(--orangeFilter);
     }
   }
 
   >div:hover {
+    /* the user profile element when hovered over */
     color: var(--mflixOrange);
   }
 }
 
 #userDropdownOptions {
+  /* the dropdown from the user profile element */
   position: absolute;
   top: 2.5em;
   background-color: var(--mflixGrey);
@@ -72,21 +120,24 @@ html {
   }
 
   div:nth-of-type(2) {
+    /* the logout div */
     margin-top: 5px;
     background-color: var(--mflixOrange);
   }
 }
 
-.sidebar {
-  width: 200px;
-  height: 100vh;
-  background-color: var(--mflixOrange);
-  background-color: var(--mflixGrey) !important;
-  float: left;
+/*
+
+BELOW ARE SOME ELEMENTS RELATING TO THE MENU BAR
+
+*/
+#menubar {
+  /* the side or bottom bar used to navigate to different pages */
+  background-color: var(--mflixGrey);
+  position: fixed;
 
   img {
-    filter: invert(98%) sepia(1%) saturate(215%) hue-rotate(84deg) brightness(115%) contrast(84%);
-    /* this filter produces var(--mflixWhite) */
+    filter: var(--whiteFilter);
   }
 
   div {
@@ -98,23 +149,29 @@ html {
   }
 }
 
+/*
+
+BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
+
+*/
+.main {
+  /* the main pages that hold the rest of the content */
+  overflow: scroll;
+
+  >h2 {
+    /* the page titles */
+    margin-left: 5%;
+  }
+}
+
 .container {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-evenly;
-  /*align-content: space-evenly;
-    gap: 15px;*/
-  /*background-color: var(--mflixBlue);
-  color: var(--mflixWhite);*/
 }
 
-/*.container img {
-    width: 150px;
-    margin: 10px 5px 0px 5px;
-    cursor: pointer;
-    border-radius: 15px;
-}*/
 .posterContainer {
+  /* a container that holds a movie's cover art */
   width: 150px;
   margin: 10px 5px 0px 5px;
   cursor: pointer;
@@ -126,8 +183,8 @@ html {
   justify-content: center;
   text-align: center;
 
-  /*z-index: -1;*/
   img, span {
+    /* the main image or loading element */
     border-radius: 15px;
     width: 95%;
     aspect-ratio: 2 / 3;
@@ -136,7 +193,8 @@ html {
     margin-top: calc(150px * 0.025);
   }
 
-  div:nth-of-type(1) {
+  div:nth-of-type(1):not(:empty) {
+    /* only apply these styles if the quality element is not empty */
     background-color: var(--mflixOrange);
     position: absolute;
     top: 2%;
@@ -148,12 +206,8 @@ html {
     padding: 0px 5px;
   }
 
-  div:nth-of-type(1):empty {
-    /* if the quality element is empty, hide it by disabling the border */
-    border: none;
-  }
-
   div:nth-of-type(2) {
+    /* the title element */
     line-height: 1.2em;
     height: calc(1.2em * 2);
     display: -webkit-box;
@@ -166,37 +220,38 @@ html {
 }
 
 .posterContainer:hover:not(.noHover) {
+  /* when hovering on a poster container that does not have the .noHover class */
   background: radial-gradient(rgba(255, 255, 255, 0), var(--mflixOrange));
   transform: scale(1.05);
   border: 2px solid var(--mflixWhite);
 }
 
-.hidden {
-  display: none !important;
-}
+/*
 
+BELOW ARE ELEMENTS RELATING TO THE INFO PAGE
+
+*/
 #infoPage {
+  /* the page that shows the info about the media */
   background-color: inherit;
-  width: 100vw;
   height: 100vh;
   overflow: hidden;
   top: 0;
-  margin: 0;
-  padding: 0;
   position: fixed;
   display: flex;
   flex-direction: column;
 }
 
 #infoSplit1 {
-  /*background-color: red;*/
-  width: 100vw;
-  height: 60vh;
+  /* the element that contains the movie title, ratings, release date, runtime, and description */
   display: flex;
   flex-direction: column;
   overflow: hidden;
 
   h1 {
+    /* the title */
+    width: 90%;
+    margin: 5% auto 0% auto;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -206,29 +261,36 @@ html {
 }
 
 #infoCluster {
+  /* the element that contains the media's ratings, release date, and runtime */
+  width: 90%;
+  margin: 2% auto;
   color: var(--mflixOrange);
+
+  table {
+    width: 100%;
+    font-weight: bold;
+  }
 }
 
-.noFlex {
-  flex: none;
+#descriptionContent {
+  /* the description of the media on the info page */
+  height: 100%;
+  overflow: auto;
+  padding-bottom: 1em;
 }
 
-.flex {
-  flex: 1;
-  /* This element will take up the remaining space */
+#descriptionContainer {
+  /* the flex container that holds the description content */
+  width: 90%;
+  margin: 0% auto 0% auto;
   position: relative;
   /* Positioning context for the gradient overlay */
   overflow: hidden;
   /* Hide the gradient's overflow */
 }
 
-.flex-content {
-  height: 100%;
-  overflow: auto;
-  padding-bottom: 1em;
-}
-
-.flex::after {
+#descriptionContainer::after {
+  /* the gradient that partly covers the description */
   content: '';
   position: absolute;
   bottom: 0;
@@ -242,238 +304,178 @@ html {
 }
 
 #infoSplit2 {
+  /* the part of the info page that contains the poster image and trailer */
   background-color: var(--mflixOrange);
-  width: 100vw;
-  height: 40vh;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   position: relative;
 
   img {
+    /* the image if there is no poster */
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     height: 25%;
-    filter: invert(98%) sepia(1%) saturate(215%) hue-rotate(84deg) brightness(115%) contrast(84%);
-    /* this filter produces var(--mflixWhite) */
+    filter: var(--whiteFilter);
   }
 }
 
-@media (orientation: landscape) {
-  #infoPage {
-    flex-direction: row;
-    padding-left: env(safe-area-inset-left, 0px);
-    width: calc(100vw - env(safe-area-inset-left, 0px));
-  }
-
-  #infoSplit1 {
-    width: calc(30vw + env(safe-area-inset-left, 0px));
-    height: 100vh;
-  }
-
-  #infoSplit2 {
-    width: calc(70vw - env(safe-area-inset-left, 0px));
-    height: 100vh;
-  }
-
-  .flex {
-    max-height: 100%;
-  }
-
-  .sidebar {
-    position: fixed;
-    top: 0;
-    width: 15vw;
-    padding-left: env(safe-area-inset-left, 0px);
-    border-right: 2px solid var(--mflixOrange);
-    margin-top: calc(3em + 2px);
-    /*border-top: 2px solid var(--mflixWhite);*/
-  }
-
-  .sidebar div {
-    display: flex;
-    flex-direction: row;
-    height: 3em;
-    align-items: center;
-    font-weight: bold;
-    cursor: pointer;
-    padding-left: env(safe-area-inset-left, 0px);
-    margin-left: calc(-1 * env(safe-area-inset-left, 0px));
-  }
-
-  .sidebar div img {
-    margin-left: 1vw;
-    margin-right: 1vw;
-  }
-
-  .sidebar div div {
-    margin-right: 1vw;
-  }
-
-  .sidebar div.active {
-    padding-right: 2vw !important;
-    margin-right: -2vw !important;
-    border-radius: 0px 15px 15px 0px;
-  }
-
-  .sidebar div.active img {
-    margin-left: 3vw;
-  }
-
-  .main {
-    margin-left: calc(15vw + env(safe-area-inset-left, 0px));
-    overflow: scroll;
-    height: calc(100% - (3em + 2px));
-  }
-
-  .spacer {
-    margin-bottom: 3vh;
-  }
-
-  #infoSplit2::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3vw;
-    height: 100vh;
-    /* Height of the gradient overlay */
-    background: linear-gradient(to left, rgba(255, 255, 255, 0), var(--mflixBlue));
-    pointer-events: none;
-    /* Ensure the gradient doesn't interfere with scrolling */
-  }
+#infoSplit2::after {
+  /* the gradient that partly covers the poster and trailer */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  /* Ensure the gradient doesn't interfere with scrolling */
 }
 
-@media (orientation: portrait) {
-  .sidebar {
-    width: 100vw;
-    height: 10vh;
-    background-color: var(--mflixGrey);
-    color: #fff;
-    bottom: 0;
-    position: fixed;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    border-top: 2px solid var(--mflixOrange);
-  }
+/*
 
-  .sidebar div {
-    display: inline-block !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    cursor: pointer;
-    width: 20vw;
-    height: 100%;
-  }
+BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
 
-  .sidebar div div {
-    display: none;
-    font-size: 0em;
-  }
-
-  .sidebar div img {
-    width: 50%;
-    height: auto;
-    margin: auto;
-    display: block;
-    margin-top: 25%;
-  }
-
-  .sidebar div.active {
-    padding-bottom: 2vh !important;
-    margin-top: -2vh !important;
-    border-radius: 15px 15px 0px 0px;
-  }
-
-  .main {
-    margin-left: 0px !important;
-    margin-bottom: 13vh;
-    height: calc(100% - (3em + 2px));
-    overflow: scroll;
-  }
-
-  .spacer {
-    margin-bottom: 13vh;
-  }
-
-  #infoSplit2::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3vh;
-    /* Height of the gradient overlay */
-    background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
-    pointer-events: none;
-    /* Ensure the gradient doesn't interfere with scrolling */
-  }
-}
-
-.button {
-  border: 2px solid var(--mflixOrange);
-  background-color: var(--mflixBlue);
-  border-radius: 10px;
-  max-width: 100%;
-  text-align: center;
-  vertical-align: middle;
-  margin: 1vh 1vh 0vh 1vh;
-  cursor: pointer;
-  padding: 0.25em;
-}
-
-.button:hover, .sidebar>div:hover, .searchDropdownItem:hover, #userDropdownOptions>div:hover, #searchSuggestions>div:hover {
-  filter: brightness(1.3);
-  /* brighten the element on hover */
-}
-
+*/
 #buttonContainer {
-  width: 90%;
+  /* the container that holds the buttons to control the media on the infoPage */
+  width: 95%;
   margin: 2% auto 5% auto;
 
   #playButton {
+    /* the play button is a little larger and differently colored */
     background-color: var(--mflixOrange);
     border-color: var(--mflixWhite);
     font-weight: bold;
+    padding: 0.5em;
+
+    img {
+      height: 1.5em;
+    }
+  }
+
+  .button {
+    /* all other buttons in the buttonContainer */
+    border: 2px solid var(--mflixOrange);
+    background-color: var(--mflixBlue);
+    border-radius: 10px;
+    max-width: 100%;
+    margin: 1vh 1vh 0vh 1vh;
+    padding: 0.25em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img {
+      filter: var(--whiteFilter);
+      margin-right: 0.25em;
+      height: 1.25em;
+    }
+  }
+
+  >div:nth-of-type(4) {
+    /* the element that holds the trailer buttons */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 0.9em;
+
+    >div:nth-of-type(1) {
+      /* the start, stop, or resume button */
+      margin-right: 0.5vh;
+      width: calc(50% - 0.5vh);
+    }
+
+    >div:nth-of-type(2) {
+      /* the restart button */
+      margin-left: 0.5vh;
+      width: calc(50% - 0.5vh);
+    }
   }
 }
 
+/*
+
+BELOW ARE ELEMENTS RELATING TO THE MEDIA AND YOUTUBE PLAYERS
+
+*/
+#ytTrailerPlayer {
+  /* hide the player by default */
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+#iframeContainer {
+  /* the element that holds the iframe for the movie or tv show */
+  width: 100vw;
+  height: 100%;
+  overflow: hidden;
+  top: 0;
+  position: fixed;
+  background-color: inherit;
+}
+
 #movieIframe {
+  /* the actual iframe tht the media will play in */
   width: 100%;
   height: 100%;
   border: none;
   overflow: hidden;
 }
 
-#iframeContainer {
-  width: 100vw;
-  height: 100%;
-  overflow: hidden;
-  top: 0;
-  position: fixed;
-  background-color: red;
-}
-
 #xMovie {
-  background-color: red;
-  width: 10vh;
-  height: 10vh;
+  /* the close button to go back from the playing media */
+  background-color: var(--mflixOrange);
+  width: 4em;
+  height: 4em;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   top: 0;
   right: 0;
-  margin: 5vh;
-  font-size: 300%;
+  margin: 1em;
   position: fixed;
-  border-radius: 1vh;
+  border-radius: 15px;
+  border: 2px solid var(--mflixWhite);
+
+  img {
+    height: 100%;
+    filter: var(--whiteFilter);
+  }
+}
+
+/*
+
+BELOW ARE ELEMENTS RELATING TO THE SEARCH FUNCTIONALITY
+
+*/
+#searchPage {
+  >div:nth-of-type(1) {
+    /* the element that holds the search bar and page title */
+    margin: auto;
+    width: 80%;
+    position: relative;
+    margin-bottom: 1em;
+
+    h2 {
+      /* the page title */
+      margin-bottom: 0;
+    }
+
+    img {
+      /* the magnifying glass on the right side of the search bar */
+      position: absolute;
+      right: 1em;
+      bottom: 0.5em;
+      height: 1.5em;
+      pointer-events: none;
+    }
+  }
 }
 
 #searchInput {
+  /* the actual search bar */
   width: 100%;
   padding: 10px;
   border-radius: 999px;
@@ -487,6 +489,7 @@ html {
 }
 
 #searchDropdown {
+  /* the dropdown that tries to autocomplete the search */
   border: 1px solid var(--mflixWhite);
   border-radius: 10px;
   max-height: 200px;
@@ -503,17 +506,50 @@ html {
 }
 
 #searchDropdown:empty {
+  /* if there are no items in the search dropdown, don't display it */
   display: none !important;
 }
 
 .searchDropdownItem {
+  /* an item in the searchDropdown */
   padding: 10px;
-  cursor: pointer;
   width: 100%;
   background-color: inherit;
 }
 
+#searchSuggestions {
+  /* the element containing the several suggested search results below the search bar */
+  height: calc(3em * 7);
+  width: 70%;
+  overflow: hidden;
+
+  h3 {
+    /* the 'Search Suggestions...' element */
+    height: 1em;
+  }
+
+  div {
+    /* individual search suggestions */
+    background-color: var(--mflixGrey);
+    line-height: 2em;
+    padding: 0em 1em;
+    margin: 0.5em 0em;
+    border-radius: 5px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 1;
+  }
+}
+
+/*
+
+BELOW ARE THE ELEMENTS RELATING TO THE LOGIN PAGE
+
+*/
 #loginPage {
+  /* the login page */
   background-color: var(--mflixBlue);
   color: var(--mflixWhite);
   width: 100vw;
@@ -529,23 +565,26 @@ html {
   align-items: center;
 
   img:nth-of-type(1) {
+    /* the logo */
     width: 300px;
     height: auto;
   }
 
   input {
+    /* the username and password inputs */
     margin: 1vh 0vh 0vh 0vh;
     border-radius: 5px;
     border: 2px solid var(--mflixOrange);
   }
 
   div:nth-of-type(1) {
+    /* the error element */
     background-color: #ff9a91;
+    color: #ff1500;
     height: 5vh;
     line-height: 5vh;
     margin: 1vh 0vh 1vh 0vh;
     border-radius: 3px;
-    color: #ff1500;
     padding: 0 1em;
   }
 
@@ -555,19 +594,15 @@ html {
   }
 
   div:nth-of-type(2) {
+    /* the login button */
     background-color: var(--mflixOrange);
     padding: 15px 30px 15px 30px;
     border-radius: 999px;
     font-weight: bold;
-    cursor: pointer;
-  }
-
-  div:nth-of-type(2):hover {
-    filter: brightness(1.3);
-    /* brighten the element on hover */
   }
 
   div:nth-of-type(3) {
+    /* the loading gif container */
     width: 50px;
     height: 50px;
     margin-top: 3vh;
@@ -579,19 +614,194 @@ html {
   }
 }
 
-.main>h2 {
-  margin-left: 5%;
+/*
+
+BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
+
+*/
+@media (orientation: landscape) {
+  #menubar {
+    /* the side or bottom bar used to navigate to different pages */
+    top: 0;
+    width: 15vw;
+    height: 100vh;
+    padding-left: env(safe-area-inset-left, 0px);
+    border-right: 2px solid var(--mflixOrange);
+    margin-top: calc(3em + 2px);
+
+    div {
+      /* a menubar option */
+      display: flex;
+      flex-direction: row;
+      height: 3em;
+      align-items: center;
+      font-weight: bold;
+      padding-left: env(safe-area-inset-left, 0px);
+      margin-left: calc(-1 * env(safe-area-inset-left, 0px));
+
+      img {
+        /* the image */
+        margin-left: 1vw;
+        margin-right: 1vw;
+      }
+
+      div {
+        /* the menu item text */
+        margin-right: 1vw;
+      }
+    }
+
+    div.active {
+      padding-right: 2vw !important;
+      margin-right: -2vw !important;
+      border-radius: 0px 15px 15px 0px;
+
+      img {
+        margin-left: 3vw;
+      }
+    }
+  }
+
+  .main {
+    /* the main pages that hold the rest of the content */
+    margin-left: calc(15vw + env(safe-area-inset-left, 0px));
+    height: calc(100% - (3em + 2px));
+  }
+
+  .spacer {
+    /* the spacer at the mottom of a main page that adds whitespace */
+    margin-bottom: 3vh;
+  }
+
+  #infoPage {
+    /* the page that shows the info about the media */
+    flex-direction: row;
+    padding-left: env(safe-area-inset-left, 0px);
+    width: calc(100vw - env(safe-area-inset-left, 0px));
+  }
+
+  #infoSplit1 {
+    /* the element that contains the movie title, ratings, release date, runtime, and description */
+    width: calc(30vw + env(safe-area-inset-left, 0px));
+    height: 100vh;
+  }
+
+  #infoSplit2 {
+    /* the part of the info page that contains the poster image and trailer */
+    width: calc(70vw - env(safe-area-inset-left, 0px));
+    height: 100vh;
+  }
+
+  #infoSplit2::after {
+    /* the gradient that partly covers the poster and trailer */
+    width: 3vw;
+    height: 100vh;
+    /* Height of the gradient overlay */
+    background: linear-gradient(to left, rgba(255, 255, 255, 0), var(--mflixBlue));
+  }
+
+  #descriptionContainer {
+    /* the flex container that holds the description content */
+    max-height: 100%;
+  }
 }
 
+/*
+
+BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
+
+*/
+@media (orientation: portrait) {
+  #menubar {
+    /* the side or bottom bar used to navigate to different pages */
+    width: 100vw;
+    height: 10vh;
+    bottom: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    border-top: 2px solid var(--mflixOrange);
+
+    div {
+      /* a menubar option */
+      display: inline-block;
+      width: 20vw;
+      height: 100%;
+
+      div {
+        /* the menu item text */
+        display: none;
+        font-size: 0em;
+      }
+
+      img {
+        /* the image */
+        width: 50%;
+        height: auto;
+        margin: auto;
+        display: block;
+        margin-top: 25%;
+      }
+    }
+
+    div.active {
+      padding-bottom: 2vh;
+      margin-top: -2vh;
+      border-radius: 15px 15px 0px 0px;
+    }
+  }
+
+  .main {
+    /* the main pages that hold the rest of the content */
+    margin-bottom: 13vh;
+    height: calc(100% - (3em + 2px));
+  }
+
+  .spacer {
+    /* the spacer at the mottom of a main page that adds whitespace */
+    margin-bottom: 13vh;
+  }
+
+  #infoPage {
+    /* the page that shows the info about the media */
+    width: 100vw;
+  }
+
+  #infoSplit1 {
+    /* the element that contains the movie title, ratings, release date, runtime, and description */
+    width: 100vw;
+    height: 60vh;
+  }
+
+  #infoSplit2 {
+    /* the part of the info page that contains the poster image and trailer */
+    width: 100vw;
+    height: 40vh;
+  }
+
+  #infoSplit2::after {
+    /* the gradient that partly covers the poster and trailer */
+    width: 100%;
+    height: 3vh;
+    /* Height of the gradient overlay */
+    background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
+  }
+}
+
+/*
+
+BELOW ARE ELEMENTS THAT ARE USED FOR ANIMATION
+
+*/
 .loadingWave {
-  /*width: 50px;
-  height: 150px; */
+  /* the main element that makes it look like something is loading */
   background-color: #444;
   position: relative;
   overflow: hidden;
 }
 
 .loadingWave::before {
+  /* the element that goes over the .loadingWave element to make it look like a wave */
   content: '';
   position: absolute;
   top: -50%;
@@ -605,35 +815,13 @@ html {
 }
 
 @keyframes wave {
+
+  /* the animation keyframe for .loadingWave */
   0% {
     transform: translate(-25%, -25%);
   }
 
   100% {
     transform: translate(25%, 25%);
-  }
-}
-
-#searchSuggestions {
-  height: calc(3em * 7);
-  width: 70%;
-  overflow: hidden;
-
-  h3 {
-    height: 1em;
-  }
-
-  div {
-    background-color: var(--mflixGrey);
-    line-height: 2em;
-    padding: 0em 1em;
-    margin: 0.5em 0em;
-    border-radius: 5px;
-    cursor: pointer;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    -webkit-line-clamp: 1;
   }
 }

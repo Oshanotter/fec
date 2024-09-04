@@ -1,7 +1,136 @@
-// JavaScript code for fetching data from TMDB API and handling click events
+// declare some global variables
 var apiKey;
 let currentCategory = 'home';
 var appsScriptBaseUrl = 'https://script.google.com/macros/s/AKfycbyFDxOpK9tZyuQWtzqPV7zXe979LLQSk288L4p5kIizBDGcLKRPX9YMfbNveG2tvyZ9bw/exec';
+var trailerPlayer;
+var trailerPlayerTimeout;
+var globalMovieId;
+var currentSource;
+
+// main function
+function main() {
+  // add loading posters to each page before the actual media loads
+  appendLoadingPosters('homePage', 20);
+  appendLoadingPosters('homePage');
+  appendLoadingPosters('moviesPage', 20);
+  appendLoadingPosters('moviesPage');
+  appendLoadingPosters('tvShowsPage', 20);
+  appendLoadingPosters('tvShowsPage');
+
+  // authenticate the current user immediately
+  authenticate();
+
+  // get the source to use to watch the movies
+  getAvalibleSource();
+
+  // add the scroll listeners in order to load more media
+  addScrollListeners();
+  // add the event listeners for the search page
+  addSearchListeners();
+  // add the event listebers for items in the header
+  addHeaderListeners();
+
+  // Add event listener for changes in orientation to adjust the max height of the overview flex element
+  window.addEventListener('orientationchange', function() {
+    var infoPage = document.getElementById('infoPage');
+    if (!infoPage.classList.contains('hidden')) {
+      adjustOverviewHeight();
+    }
+  });
+
+  // display search suggestions on the search page
+  loadSearchSuggestions();
+
+}
+
+
+// commonly used functions
+function shuffleList(array) {
+  // create a copy of the original array to avoid modifying it
+  const newArray = [...array];
+
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    // swap newArray[i] and newArray[j]
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+
+  // return the shuffled array
+  return newArray;
+}
+
+function stringToHash(string) {
+  // used to encrypt passwords, it converts a string to a hash value
+  return string.split('').reduce((hash, char) => {
+    return char.charCodeAt(0) + (hash << 6) + (hash << 16) - hash;
+  }, 0);
+}
+
+function countColumns() {
+  // counts how many columns of media posters are currently on the screen
+
+  // find the current page
+  var mainPages = document.querySelectorAll('.main');
+  for (i = 0; i < mainPages.length; i++) {
+    var main = mainPages[i];
+    if (!main.classList.contains('hidden')) {
+      break;
+    }
+  }
+
+  var posterElm = main.querySelector('.posterContainer');
+
+  var containerWidth = main.clientWidth;
+  var imgWidth = posterElm.offsetWidth;
+
+  // get the style of the poster element
+  var style = window.getComputedStyle(posterElm);
+  var totalMargin = parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+  var totalImgWidth = imgWidth + totalMargin;
+
+  // return the calculation of how many columns there are
+  return Math.floor(containerWidth / totalImgWidth);
+}
+
+function setLocalStorage(keyPath, value) {
+  // this function sets the input value to the specified keypath of the FEC local storage item
+
+  var fecDict = JSON.parse(localStorage.getItem('FEC'));
+  if (!fecDict) {
+    var fecDict = {};
+  }
+
+  // if there are no arguments, reset the local storage
+  if (!keyPath && !value) {
+    localStorage.setItem('FEC', JSON.stringify({}));
+    return;
+  }
+
+  const parts = keyPath.split('.');
+  const lastPart = parts.pop();
+
+  const target = parts.reduce((acc, part) => {
+    if (!acc[part]) {
+      acc[part] = {}; // Create the nested object if it doesn't exist
+    }
+    return acc[part];
+  }, fecDict);
+
+  target[lastPart] = value;
+
+  localStorage.setItem('FEC', JSON.stringify(fecDict));
+
+}
+
+function getLocalStorage(keyPath) {
+  // this function gets the value of the specified keypath of the FEC local storage item
+  var fecDict = JSON.parse(localStorage.getItem('FEC'));
+  return keyPath.split('.').reduce((acc, part) => acc && acc[part], fecDict);
+}
+
+
+
+
 
 function fetchData(url) {
   return fetch(url)
@@ -108,48 +237,56 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
     .catch(error => console.log('Error fetching movie info:', error));
 }
 
-// adjusts the description/overview height
 function adjustOverviewHeight() {
+  // adjusts the description/overview height
+
   var flexElement = document.querySelector("#infoSplit1 > div.flex");
   flexElement.style.maxHeight = '1px';
 
-  // Check if the device is in landscape mode
+  // check if the device is in landscape mode
   if (window.matchMedia("(orientation: landscape)").matches) {
-    console.log('in landscape');
-    // It is in landscape mode, so set the max height to the scroll height of the flex content
-    var flexContent = document.querySelector('.flex-content');
+    //console.log('in landscape');
+    // it is in landscape mode, so set the max height to the scroll height of the flex content
+    var flexContent = document.getElementById('descriptionContent');
     flexElement.style.maxHeight = flexContent.scrollHeight + 'px';
   } else {
-    console.log('in portrait');
+    //console.log('in portrait');
     // it is not in landscape mode, so set the max heoght of the flex element to 100%
     flexElement.style.maxHeight = "100%";
   }
 }
 
-// function to get the movie or tv show trailer
-async function getMediaTrailer(movieId, mediaType) {
-  if (mediaType == 'movie') {
-    var url = 'https://api.themoviedb.org/3/movie/' + movieId + '/videos?api_key=' + apiKey;
-  } else if (mediaType == 'tv') {
-    var url = 'https://api.themoviedb.org/3/tv/' + movieId + '/videos?api_key=' + apiKey;
-  }
-  console.log(url)
+async function getMediaTrailer(mediaId, mediaType) {
+  // function to get the movie or tv show trailer
 
+  // get the correct url based on the media type
+  if (mediaType == 'movie') {
+    var url = 'https://api.themoviedb.org/3/movie/' + mediaId + '/videos?api_key=' + apiKey;
+  } else if (mediaType == 'tv') {
+    var url = 'https://api.themoviedb.org/3/tv/' + mediaId + '/videos?api_key=' + apiKey;
+  }
+
+  // try to fetch the url
   try {
     const response = await fetch(url);
+
     if (!response.ok) {
       throw new Error('Network response was not ok ' + response.statusText);
     }
+
     const data = await response.json();
 
-    // Find the YouTube trailer
+    // find the YouTube trailer from the results of the url
     const trailer = data.results.find(video => video.site === 'YouTube' && video.type === 'Trailer');
+
     if (trailer) {
       return trailer.key;
     } else {
       return null;
     }
+
   } catch (error) {
+    // return null and log the error
     console.error('There has been a problem with your fetch operation:', error);
     return null;
   }
@@ -164,73 +301,20 @@ function resumeMedia() {
 }
 
 
-function main() {
-  // add loading posters to each page before the actual media loads
-  appendLoadingPosters('homePage', 20);
-  appendLoadingPosters('homePage');
-  appendLoadingPosters('moviesPage', 20);
-  appendLoadingPosters('moviesPage');
-  appendLoadingPosters('tvShowsPage', 20);
-  appendLoadingPosters('tvShowsPage');
-
-  // authenticate the current user immediately
-  authenticate();
-
-  // Add event listener for changes in orientation to adjust the max height of the overview flex element
-  window.addEventListener('orientationchange', function() {
-    var infoPage = document.getElementById('infoPage');
-    if (!infoPage.classList.contains('hidden')) {
-      adjustOverviewHeight();
-    }
-  });
-
-  // get the source to use to watch the movies
-  getAvalibleSource();
-
-  // add the scroll listeners in order to load more media
-  addScrollListeners();
-
-  // add event listener for when the user presses enter in the ssearch bar
-  document.getElementById("searchInput").addEventListener("keydown", function(event) {
-    if (event.key === "Enter") { // Check if the Enter key is pressed
-      var title = document.getElementById('searchInput').value;
-      searchMoviesAndTvShows(title).then(dict => {
-          displaySearchResults(dict);
-          hideSearchDropdown();
-        })
-        .catch(error => {
-          console.error("Error fetching movies and TV shows:", error);
-        });
-    }
-  });
-
-  // add an event listener to the user profile element to display the dropdown when clicked
-  var userProfileDiv = document.querySelector('#header > div');
-  userProfileDiv.addEventListener('click', function() {
-    var dropdown = document.getElementById('userDropdownOptions');
-    dropdown.classList.remove('hidden');
-  });
-
-  userProfileDiv.addEventListener('mouseleave', function() {
-    var dropdown = document.getElementById('userDropdownOptions');
-    dropdown.classList.add('hidden');
-  });
-
-  // display search suggestions on the search page
-  loadSearchSuggestions();
-
-}
-
 function displayPage(pageID) {
   loadPageContent(pageID);
 
-  // mark the selected page in the sidebar as active and remove the other active classes
-  try {
-    var currentTab = document.querySelectorAll('.active')[0];
+  // mark the selected page in the menubar as active and remove the other active classes
+  var currentTab = document.querySelector('.active');
+  if (currentTab) {
     currentTab.classList.remove('active');
-    var newTab = document.getElementById(pageID.replace('Page', ''));
+  }
+  var newTab = document.getElementById(pageID.replace('Page', ''));
+  if (newTab) {
     newTab.classList.add('active');
-  } catch {
+  }
+
+  if (pageID == "settingsPage") {
     // the page is the settings page, so add the hidden class back to userDropdownOptions
     var dropdown = document.getElementById('userDropdownOptions');
     dropdown.classList.add('hidden');
@@ -248,15 +332,11 @@ function displayPage(pageID) {
 }
 
 
-// declare some global variables
-var trailerPlayer;
-var trailerPlayerTimeout;
-var globalMovieId;
-var currentSource;
 
-// This function creates an <iframe> (and YouTube player)
-// after the API code downloads.
+
 function onYouTubeIframeAPIReady() {
+  // this function creates an <iframe> for the youtube player after the API code downloads
+
   trailerPlayer = new YT.Player('ytTrailerPlayer', {
     height: '100%',
     width: '100%',
@@ -273,16 +353,27 @@ function onYouTubeIframeAPIReady() {
   });
 }
 
-// The API calls this function when the player's state changes.
 function onTrailerStateChange(event) {
+  // the youtube API calls this function when the player's state changes
+
   var trailerBtn = document.getElementById('stopTrailer');
+
   if (event.data == YT.PlayerState.ENDED) {
+    // the trailer has ended
     var playerElement = document.getElementById('ytTrailerPlayer');
     playerElement.style.display = 'none';
+    trailerBtn.innerText = "Start Trailer";
+    trailerBtn.onclick = function() {
+      var id = trailerPlayer.getVideoData().video_id;
+      startTrailer(id);
+    }
 
   } else if (event.data == YT.PlayerState.PAUSED) {
+    // the trailer has been paused
     trailerBtn.innerText = "Resume Trailer";
     trailerBtn.onclick = function() {
+      var playerElement = document.getElementById('ytTrailerPlayer');
+      playerElement.style.display = 'block';
       trailerPlayer.playVideo();
       trailerBtn.innerText = "Stop Trailer";
       trailerBtn.onclick = function() {
@@ -291,17 +382,27 @@ function onTrailerStateChange(event) {
     }
 
   } else if (event.data == YT.PlayerState.PLAYING) {
+    // the trailer has been resumed
     trailerBtn.innerText = "Stop Trailer";
     trailerBtn.onclick = function() {
       trailerPlayer.pauseVideo();
     }
 
   } else if (event.data == -1) {
+    // the trailer no longer exists
+    var trailerBtn1 = document.getElementById('stopTrailer');
+    var trailerBtn2 = document.getElementById('restartTrailer');
+    trailerBtn1.classList.add('hidden');
+    trailerBtn2.classList.add('hidden');
+    var playerElement = document.getElementById('ytTrailerPlayer');
+    playerElement.style.display = 'none';
+    /*
     trailerBtn.innerText = "Start Trailer";
     trailerBtn.onclick = function() {
       var id = trailerPlayer.getVideoData().video_id;
       startTrailer(id);
     }
+    */
   }
 }
 
@@ -314,6 +415,10 @@ function startTrailer(trailerID) {
 }
 
 function restartTrailer() {
+  // display the player again
+  var playerElement = document.getElementById('ytTrailerPlayer');
+  playerElement.style.display = 'block';
+
   var trailerBtn = document.getElementById('stopTrailer');
   if (trailerBtn.innerText == "Start Trailer") {
     trailerBtn.click();
@@ -371,12 +476,6 @@ function stopMovie() {
   }
 }
 
-/*
-window.addEventListener('message', message => {
-    alert(message.origin + "\n\n" + message.data);
-    console.log(message.origin + "\n\n" + message.data);
-});
-*/
 
 async function preLoadMedia(tmdbID, mediaType) {
   try {
@@ -606,24 +705,6 @@ function displayCertification(movieId, mediaType) {
 
 
 
-function countColumns() {
-  var mainPages = document.querySelectorAll('.main');
-  for (i = 0; i < mainPages.length; i++) {
-    var main = mainPages[i];
-    if (!main.classList.contains('hidden')) {
-      break;
-    }
-  }
-
-  var posterElm = main.querySelector('.posterContainer');
-
-  var containerWidth = main.clientWidth;
-  var imgWidth = posterElm.offsetWidth;
-  var style = window.getComputedStyle(posterElm);
-  var totalMargin = parseFloat(style.marginLeft) + parseFloat(style.marginRight);
-  var totalImgWidth = imgWidth + totalMargin;
-  return Math.floor(containerWidth / totalImgWidth);
-}
 
 async function getAvalibleSource() {
   try {
@@ -654,20 +735,6 @@ async function getAvalibleSource() {
   }
 }
 
-
-document.getElementById('searchInput').addEventListener('input', function(event) {
-  const query = event.target.value;
-  if (query.length > 2) {
-    searchMoviesAndTvShows(query).then(dict => {
-        displayDropdown(dict);
-      })
-      .catch(error => {
-        console.error("Error fetching movies and TV shows:", error);
-      });
-  } else {
-    hideSearchDropdown();
-  }
-});
 
 async function searchMoviesAndTvShows(query) {
   var url = 'https://api.themoviedb.org/3/search/multi?api_key=' + apiKey + '&query=' + encodeURIComponent(query);
@@ -705,6 +772,7 @@ function displayDropdown(dict) {
 
     const item = document.createElement('div');
     item.classList.add('searchDropdownItem');
+    item.classList.add('button');
     const title = result.title || result.name; // Movies use 'title', TV shows use 'name'
     item.textContent = title;
     item.addEventListener('click', () => {
@@ -730,11 +798,6 @@ function hideSearchDropdown() {
   searchBar.style.zIndex = 0;
 }
 
-document.addEventListener('click', function(event) {
-  if (!document.getElementById('searchInput').contains(event.target)) {
-    hideSearchDropdown();
-  }
-});
 
 function displaySearchResults(dict) {
   //console.log(moviesList);
@@ -871,49 +934,12 @@ function getLatestMedia(pageNum = 1, category) {
 }
 
 function loadMoreMedia() {
-  var pageID = document.querySelector('.sidebar > .active').id;
+  var pageID = document.querySelector('#menubar > .active').id;
   var page = document.getElementById(pageID + 'Page').querySelector('.container');
   var lastPageNum = page.dataset.lastpagenum;
   getLatestMedia(lastPageNum + 1, pageID);
 }
 
-function addScrollListeners() {
-  // add listeners to the movies and tv shows elements so that when the user scrolls to the bottom, more media loads
-
-  var pages = ['moviesPage', 'tvShowsPage'];
-  for (var i = 0; i < pages.length; i++) {
-    (function() {
-      var pageId = pages[i];
-      var element = document.getElementById(pageId);
-
-      // Add a scroll event listener to the element
-      element.addEventListener('scroll', function() {
-        // Calculate the scroll position
-        var scrollPosition = element.scrollTop + element.clientHeight;
-        var scrollHeight = element.scrollHeight - 1;
-
-        // Log the values
-        /*console.log('scrollTop:', element.scrollTop);
-        console.log('clientHeight:', element.clientHeight);
-        console.log('scrollHeight:', element.scrollHeight);*/
-
-        // Check if the user has scrolled to the bottom
-        if (scrollPosition >= scrollHeight) {
-          console.log('You have scrolled to the bottom!');
-          //loadMoreMedia();
-          console.log(pages[i])
-          var container = element.querySelector('.container');
-          if (container.dataset.loading == 'true') {
-            // if the previous media is still loading, do nothing
-            return;
-          }
-          var nextPageNum = parseInt(container.dataset.lastpagenum) + 1;
-          getLatestMedia(nextPageNum, pageId);
-        }
-      });
-    })(); // IIFE to capture the correct `element`
-  }
-}
 
 
 function makePosterDiv(id, title = "undefined title", quality = "", imgURL, mediaType) {
@@ -932,7 +958,7 @@ function makePosterDiv(id, title = "undefined title", quality = "", imgURL, medi
 
   var img = document.createElement('img');
   if (!imgURL) {
-    img.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNNLEL-qmmLeFR1nxJuepFOgPYfnwHR56vcw&s";
+    img.src = "icons/general/no_cover.png";
   } else {
     img.src = 'https://image.tmdb.org/t/p/w185' + imgURL;
   }
@@ -979,77 +1005,6 @@ function authenticate() {
       var loginPage = document.getElementById('loginPage');
       loginPage.classList.remove("hidden");
     }
-  }
-}
-
-function displayPopup(message, closeText = null, continueText = null, continueFunction = null, ...continueArgs) {
-  // first remove the prevent input element if it already exists
-  var oldElem = document.getElementById('preventInput');
-  if (oldElem != null) {
-    oldElem.remove();
-  }
-  // create an element over the top of everything and display a message with options
-  // create a blank div tag to prevent background items from being clicked
-  var preventInput = document.createElement('div');
-  preventInput.id = "preventInput";
-  preventInput.style.height = "100%";
-  preventInput.style.width = "100%";
-  preventInput.style.overflow = "hidden";
-  preventInput.style.top = "0";
-  preventInput.style.position = "fixed";
-  preventInput.style.backgroundColor = "rgba(0, 0, 0, 0.75)";
-  document.body.appendChild(preventInput);
-
-  var mainDiv = document.createElement('div');
-  mainDiv.style.backgroundColor = "white";
-  mainDiv.style.width = "70%";
-  mainDiv.style.position = "fixed";
-  mainDiv.style.top = "50%";
-  mainDiv.style.left = "50%";
-  mainDiv.style.transform = 'translate(-50%, -50%)';
-  mainDiv.style.margin = "auto";
-  mainDiv.style.overflow = "hidden";
-  mainDiv.style.borderRadius = "20px";
-  mainDiv.style.border = "solid";
-  mainDiv.style.display = "flex";
-  mainDiv.style.flexDirection = "column";
-  mainDiv.style.textAlign = "center";
-  preventInput.appendChild(mainDiv);
-
-  var messageDiv = document.createElement('div');
-  messageDiv.style.margin = "5%";
-  messageDiv.innerHTML = message;
-  mainDiv.appendChild(messageDiv);
-
-  var buttonContainer = document.createElement('div');
-  buttonContainer.style.display = "flex";
-  buttonContainer.style.justifyContent = "space-evenly";
-  buttonContainer.style.marginBottom = "5%";
-  mainDiv.appendChild(buttonContainer);
-
-  if (closeText != null) {
-    var cancelBtn = document.createElement('div');
-    cancelBtn.style.padding = "3% 5% 3% 5%";
-    cancelBtn.style.borderRadius = "999px";
-    cancelBtn.style.backgroundColor = "red";
-    cancelBtn.innerText = closeText;
-    cancelBtn.addEventListener('click', () => {
-      preventInput.remove();
-    });
-    buttonContainer.appendChild(cancelBtn);
-  }
-
-  if (continueText != null && continueFunction != null) {
-    var continueBtn = document.createElement('div');
-    continueBtn.style.padding = "3% 5% 3% 5%";
-    continueBtn.style.borderRadius = "999px";
-    continueBtn.style.backgroundColor = "blue";
-    continueBtn.innerText = continueText;
-    continueBtn.addEventListener('click', () => {
-      continueFunction(...continueArgs);
-      preventInput.remove();
-    });
-    buttonContainer.appendChild(continueBtn);
   }
 }
 
@@ -1109,44 +1064,7 @@ function logout() {
   document.location.href = homePage;
 }
 
-function setLocalStorage(keyPath, value) {
-  var fecDict = JSON.parse(localStorage.getItem('FEC'));
-  if (!fecDict) {
-    var fecDict = {};
-  }
 
-  // if there are no arguments, reset the local storage
-  if (!keyPath && !value) {
-    localStorage.setItem('FEC', JSON.stringify({}));
-    return;
-  }
-
-  const parts = keyPath.split('.');
-  const lastPart = parts.pop();
-
-  const target = parts.reduce((acc, part) => {
-    if (!acc[part]) {
-      acc[part] = {}; // Create the nested object if it doesn't exist
-    }
-    return acc[part];
-  }, fecDict);
-
-  target[lastPart] = value;
-
-  localStorage.setItem('FEC', JSON.stringify(fecDict));
-
-}
-
-function getLocalStorage(keyPath) {
-  var fecDict = JSON.parse(localStorage.getItem('FEC'));
-  return keyPath.split('.').reduce((acc, part) => acc && acc[part], fecDict);
-}
-
-function stringToHash(string) {
-  return string.split('').reduce((hash, char) => {
-    return char.charCodeAt(0) + (hash << 6) + (hash << 16) - hash;
-  }, 0);
-}
 
 
 
@@ -1197,11 +1115,110 @@ function removeLoadingPosters(mediaPageID) {
 
 
 
+
+
+
+// functions that add event listeners or that run immediately
+function addScrollListeners() {
+  // add listeners to the movies and tv shows elements so that when the user scrolls to the bottom, more media loads
+
+  var pages = ['moviesPage', 'tvShowsPage'];
+  for (var i = 0; i < pages.length; i++) {
+    (function() {
+      var pageId = pages[i];
+      var element = document.getElementById(pageId);
+
+      // Add a scroll event listener to the element
+      element.addEventListener('scroll', function() {
+        // Calculate the scroll position
+        var scrollPosition = element.scrollTop + element.clientHeight;
+        var scrollHeight = element.scrollHeight - 1;
+
+        // Log the values
+        /*console.log('scrollTop:', element.scrollTop);
+        console.log('clientHeight:', element.clientHeight);
+        console.log('scrollHeight:', element.scrollHeight);*/
+
+        // Check if the user has scrolled to the bottom
+        if (scrollPosition >= scrollHeight) {
+          console.log('You have scrolled to the bottom!');
+          //loadMoreMedia();
+          console.log(pages[i])
+          var container = element.querySelector('.container');
+          if (container.dataset.loading == 'true') {
+            // if the previous media is still loading, do nothing
+            return;
+          }
+          var nextPageNum = parseInt(container.dataset.lastpagenum) + 1;
+          getLatestMedia(nextPageNum, pageId);
+        }
+      });
+    })(); // IIFE to capture the correct `element`
+  }
+}
+
+function addSearchListeners() {
+  // this function adds a variety of different event listeners relating to the search page
+
+  // add an event listener to search for media only when there are more than two characters typed
+  document.getElementById('searchInput').addEventListener('input', function(event) {
+    const query = event.target.value;
+    if (query.length > 2) {
+      searchMoviesAndTvShows(query).then(dict => {
+          displayDropdown(dict);
+        })
+        .catch(error => {
+          console.error("Error fetching movies and TV shows:", error);
+        });
+    } else {
+      hideSearchDropdown();
+    }
+  });
+
+  // add event listener for when the user presses enter in the ssearch bar
+  document.getElementById("searchInput").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") { // Check if the Enter key is pressed
+      var title = document.getElementById('searchInput').value;
+      searchMoviesAndTvShows(title).then(dict => {
+          displaySearchResults(dict);
+          hideSearchDropdown();
+        })
+        .catch(error => {
+          console.error("Error fetching movies and TV shows:", error);
+        });
+    }
+  });
+
+  // add an event listener to the whole document to see when the user clicks outside of the search input
+  document.addEventListener('click', function(event) {
+    if (!document.getElementById('searchInput').contains(event.target)) {
+      hideSearchDropdown();
+    }
+  });
+}
+
+function addHeaderListeners() {
+  // this function adds a few event listeners to the user element in the header
+
+  // add an event listener to the user profile element to display the dropdown when clicked
+  var userProfileDiv = document.querySelector('#header > div');
+  userProfileDiv.addEventListener('click', function() {
+    var dropdown = document.getElementById('userDropdownOptions');
+    dropdown.classList.remove('hidden');
+  });
+
+  userProfileDiv.addEventListener('mouseleave', function() {
+    var dropdown = document.getElementById('userDropdownOptions');
+    dropdown.classList.add('hidden');
+  });
+}
+
 function loadSearchSuggestions() {
+  // this function gets a random selection of movies and tv shows on tmdb for search suggestions on the search page
+
   var pageNum = Math.floor(Math.random() * 500);
   var movieURL = "https://api.themoviedb.org/3/discover/movie?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
   var tvURL = "https://api.themoviedb.org/3/discover/tv?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
-  console.log(movieURL)
 
   Promise.all([
       fetch(movieURL).then((response) => response.json()),
@@ -1209,20 +1226,21 @@ function loadSearchSuggestions() {
     ])
     .then(([movies, tvShows]) => {
       combinedResults = [...movies.results, ...tvShows.results];
-      console.log(combinedResults);
       var shuffledList = shuffleList(combinedResults);
-      console.log(shuffledList);
 
       // make a new element to display the search suggestions
       var main = document.createElement('div');
       main.id = "searchSuggestions";
 
+      // make a heading for the search suggestions
       var heading = document.createElement('h3');
       heading.innerText = "Search Suggestions...";
       main.appendChild(heading);
 
+      // itterate through the results and append it to the element
       for (var i = 0; i < shuffledList.length; i++) {
         var suggestion = document.createElement('div');
+        suggestion.classList.add('button');
         let title = shuffledList[i].title || shuffledList[i].name;
         suggestion.innerText = title;
         suggestion.onclick = function() {
@@ -1237,6 +1255,7 @@ function loadSearchSuggestions() {
         };
         main.appendChild(suggestion);
       }
+      // append the main element to the container on the search page
       var container = document.getElementById('searchPage').querySelector('.container');
       container.innerHTML = '';
       container.appendChild(main);
@@ -1244,26 +1263,6 @@ function loadSearchSuggestions() {
     .catch(error => console.error('Error fetching data:', error));
 }
 
-function shuffleList(array) {
-  // Create a copy of the original array to avoid modifying it
-  const newArray = [...array];
 
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    // Swap newArray[i] and newArray[j]
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-
-  // Return the shuffled array
-  return newArray;
-}
-
-
-
-
-
-
-
-
-
+// execute the main function right away
 main();

@@ -1,7 +1,14 @@
+// make a function to easily add prefixes to each list item
+function addPrefixToList(list, prefix) {
+  for (let i = 0; i < list.length; i++) {
+    list[i] = prefix + list[i];
+  }
+}
+
 const PRECACHE = 'precache';
 
-// A list of local resources we always want to be cached.
-const PRECACHE_URLS = [
+// cache the main files needed for the webpage
+const mainFiles = [
   'index.html',
   './', // Alias for index.html
   'styles.css',
@@ -11,6 +18,31 @@ const PRECACHE_URLS = [
   'icons/masked.png',
   'icons/logo.png'
 ];
+
+// cache the icons for the menu bar and other stuff
+const generalIcons = [
+  'account_circle.svg',
+  'arrow_back.svg',
+  'close.svg',
+  'history.svg',
+  'home.svg',
+  'list.svg',
+  'loading_wheel.gif',
+  'movie.svg',
+  'no_cover.png',
+  'no_image.svg',
+  'play_arrow.svg',
+  'playlist_add.svg',
+  'playlist_remove.svg',
+  'resume.svg',
+  'search.svg',
+  'tv.svg'
+];
+addPrefixToList(generalIcons, "icons/general/");
+
+
+// combine all of the cached pages into one list
+const PRECACHE_URLS = [...mainFiles, ...generalIcons];
 
 // The install handler takes care of precaching the resources we always need.
 self.addEventListener('install', event => {
