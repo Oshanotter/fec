@@ -107,13 +107,13 @@ BELOW ARE SOME ELEMENTS RELATING TO THE HEADER
   top: 2.5em;
   background-color: var(--mflixGrey);
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 10px;
   z-index: 999;
   color: var(--mflixWhite);
 
   div {
-    border-radius: inherit;
-    padding: 5px;
+    border-radius: 5px;
+    padding: 5px 10px;
     display: flex;
     justify-content: center;
     background-color: inherit;
@@ -121,7 +121,7 @@ BELOW ARE SOME ELEMENTS RELATING TO THE HEADER
 
   div:nth-of-type(2) {
     /* the logout div */
-    margin-top: 5px;
+    margin-top: 7px;
     background-color: var(--mflixOrange);
   }
 }
