@@ -73,7 +73,25 @@
 
     <div id="settingsPage" class="main hidden">
         <h2>Settings</h2>
-        <div style="width: 80%; height: 10%; text-align: center;">Settings section coming soon...</div>
+        <div class="container">
+            <div id="autoStartTrailerContainer" class="settingContainer">
+                <h4>
+                    Auto Start Trailer:
+                </h4>
+                <input type="radio" name="autoStartTrailer" value="yes" onclick="setSetting('autoStartTrailer', true)">
+                <label>Yes</label>
+                <input type="radio" name="autoStartTrailer" value="no" onclick="setSetting('autoStartTrailer', false)">
+                <label>No</label>
+            </div>
+            <div class="settingContainer">
+                <h4>
+                    Zoom Level:
+                </h4>
+                <div onclick="setZoom('-')" class="button">−</div>
+                <input type="number" id="zoomInput" name="zoomLevel" value="100" max="300" min="30">
+                <div onclick="setZoom('+')" class="button">+</div>
+            </div>
+        </div>
         <div class="spacer"></div>
     </div>
 

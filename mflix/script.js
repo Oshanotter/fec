@@ -36,6 +36,9 @@ function main() {
     }
   });
 
+  // adjust the page to reflect the current settings
+  executeSettings();
+
 }
 
 
@@ -130,9 +133,8 @@ function getLocalStorage(keyPath) {
 function authenticate() {
   // authenticate the user by checking to see if they have the apiKey, if not, make them login
 
-  try {
-    var fecDict = JSON.parse(localStorage.getItem('FEC'));
-    apiKey = fecDict.Mflix.apiKey;
+  apiKey = getLocalStorage('Mflix.apiKey');
+  if (apiKey) {
     loadPageContent('homePage');
     // hide the login page
     var loginPage = document.getElementById('loginPage');
@@ -143,13 +145,13 @@ function authenticate() {
     // display search suggestions on the search page
     loadSearchSuggestions();
 
-  } catch {
+  } else {
     var username = getLocalStorage('username');
     var password = getLocalStorage('password');
     if (username && password) {
       login(username, password);
     } else {
-      //displayPopup('<h1>Login To Continue</h1><br><input type="text" id="username" name="username" placeholder="Username"><br><br><input type="text" id="password" name="password" placeholder="Password">', null, "Login", login);
+      // show the login page
       var loginPage = document.getElementById('loginPage');
       loginPage.classList.remove("hidden");
     }
@@ -203,7 +205,7 @@ function login(username, passwordHash) {
         return;
       }
       setLocalStorage("username", username);
-      setLocalStorage("password", password);
+      setLocalStorage("password", passwordHash);
       setLocalStorage("Mflix.apiKey", key);
       authenticate();
     });
@@ -525,10 +527,15 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
           }
           trailerBtn1.setAttribute("data-id", trailerID);
 
-          // autostart the trailer after 5 seconds
-          trailerPlayerTimeout = setTimeout(function() {
-            startTrailer(); // don't use a video id, so that the player doesn't have to reload
-          }, 5000);
+          // only autoplay the trailer if the setting is set to do so
+          if (getSetting('autoStartTrailer')) {
+
+            // autostart the trailer after 5 seconds
+            trailerPlayerTimeout = setTimeout(function() {
+              startTrailer(); // don't use a video id, so that the player doesn't have to reload
+            }, 5000);
+
+          }
 
         } else {
           // the trailer does not exist
@@ -995,9 +1002,9 @@ function playMovie(sourceURL) {
 function stopMovie() {
   // stops playing the movie or tv show in the iframe
 
-  // stop the media by loading an invalid movie
+  // stop the media by setting the iframe source to nothing
   var iframe = document.getElementById('movieIframe');
-  iframe.src = "https://vidsrc.to/embed/movie/";
+  iframe.src = "";
   iframe.parentNode.classList.add('hidden');
 
   // reset the trailer player button
@@ -1117,6 +1124,97 @@ function displaySearchResults(dict) {
 function addToList() {
   alert('Add to list function coming soon');
 }
+
+
+
+// functions for adjusting settings
+function getSetting(setting) {
+  // gets the specified setting from the local storage
+
+  var defaultValues = {
+    autoStartTrailer: true,
+    zoom: 100
+  }
+
+  var value = getLocalStorage('Mflix.settings.' + setting);
+  if (value == undefined) {
+    var value = defaultValues[setting];
+  }
+
+  return value;
+}
+
+function setSetting(setting, value) {
+  // sets the specified setting to the local storage
+
+  setLocalStorage('Mflix.settings.' + setting, value);
+
+  // immediately execute the attribution of the settings
+  executeSettings();
+}
+
+function executeSettings() {
+  // adjusts the page to reflect the current settings
+
+  // adjust zoom settings
+  var newZoom = getSetting('zoom')
+  setZoom(newZoom);
+
+  // adjust auto play buttons
+  var container = document.getElementById('autoStartTrailerContainer');
+  var btn1 = container.querySelector('input:nth-of-type(1)');
+  var btn2 = container.querySelector('input:nth-of-type(2)');
+  if (getSetting('autoStartTrailer')) {
+    btn2.removeAttribute('checked');
+    btn1.setAttribute('checked', true);
+  } else {
+    btn1.removeAttribute('checked');
+    btn2.setAttribute('checked', true);
+  }
+
+}
+
+function setZoom(zoomLevel) {
+  // adjust the zoom level of the body tag to the given input
+
+  var body = document.querySelector('body');
+  if (body.style.zoom == '') {
+    var currentZoom = 100;
+  } else {
+    var currentZoom = Number(body.style.zoom.replace('%', ''));
+  }
+
+  if (typeof zoomLevel == "number") {
+    // zoom to the specified level
+    var newZoom = zoomLevel;
+
+  } else {
+    if (zoomLevel == "+") {
+      // zoom in by 10
+      var newZoom = currentZoom + 10;
+
+    } else if (zoomLevel == "-") {
+      // zoom out by 10
+      var newZoom = currentZoom - 10;
+
+    }
+  }
+
+  body.style.zoom = newZoom + '%';
+
+  var zoomInput = document.getElementById('zoomInput');
+  zoomInput.value = newZoom;
+
+  // add the setting to the local storage without using the setSetting function
+  setLocalStorage('Mflix.settings.zoom', newZoom);
+}
+
+var zoomInput = document.getElementById('zoomInput');
+zoomInput.addEventListener('change', function() {
+  var zoomValue = Number(zoomInput.value);
+  setZoom(zoomValue);
+});
+
 
 
 

@@ -64,14 +64,14 @@ BELOW ARE SOME ELEMENTS RELATING TO THE HEADER
 */
 #header {
   height: 3em;
-  width: 94vw;
+  width: 94%;
   background-color: var(--mflixBlue);
   border-bottom: 2px solid var(--mflixWhite);
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 0 3vw;
+  padding: 0 3%;
 
   >img {
     /* the logo in the top left */
@@ -142,6 +142,7 @@ BELOW ARE SOME ELEMENTS RELATING TO THE MENU BAR
 
   div {
     background-color: inherit;
+    overflow: hidden;
   }
 
   div.active {
@@ -234,7 +235,7 @@ BELOW ARE ELEMENTS RELATING TO THE INFO PAGE
 #infoPage {
   /* the page that shows the info about the media */
   background-color: inherit;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   top: 0;
   position: fixed;
@@ -408,7 +409,7 @@ BELOW ARE ELEMENTS RELATING TO THE MEDIA AND YOUTUBE PLAYERS
 
 #iframeContainer {
   /* the element that holds the iframe for the movie or tv show */
-  width: 100vw;
+  width: 100%;
   height: 100%;
   overflow: hidden;
   top: 0;
@@ -552,8 +553,8 @@ BELOW ARE THE ELEMENTS RELATING TO THE LOGIN PAGE
   /* the login page */
   background-color: var(--mflixBlue);
   color: var(--mflixWhite);
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   top: 0;
   margin: 0;
@@ -616,6 +617,48 @@ BELOW ARE THE ELEMENTS RELATING TO THE LOGIN PAGE
 
 /*
 
+BELOW ARE THE ELEMENTS RELATING TO THE SETTINGS PAGE
+
+*/
+#settingsPage {
+  .settingContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
+    border-bottom: 2px solid var(--mflixOrange);
+    margin-bottom: 1em;
+
+    h4 {
+      margin-right: 1em;
+    }
+
+    input {
+      accent-color: var(--mflixOrange);
+    }
+
+    label {
+      margin-right: 1em;
+    }
+
+    .button {
+      border: 2px solid var(--mflixOrange);
+      border-radius: 999px;
+      margin: 5px;
+      padding: 1px;
+      height: 1em;
+      aspect-ratio: 1/1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+    }
+  }
+}
+
+/*
+
 BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
 
 */
@@ -624,7 +667,7 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
     /* the side or bottom bar used to navigate to different pages */
     top: 0;
     width: 15vw;
-    height: 100vh;
+    height: 100%;
     padding-left: env(safe-area-inset-left, 0px);
     border-right: 2px solid var(--mflixOrange);
     margin-top: calc(3em + 2px);
@@ -677,25 +720,25 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
     /* the page that shows the info about the media */
     flex-direction: row;
     padding-left: env(safe-area-inset-left, 0px);
-    width: calc(100vw - env(safe-area-inset-left, 0px));
+    width: calc(100% - env(safe-area-inset-left, 0px));
   }
 
   #infoSplit1 {
     /* the element that contains the movie title, ratings, release date, runtime, and description */
-    width: calc(30vw + env(safe-area-inset-left, 0px));
-    height: 100vh;
+    width: calc(30% + env(safe-area-inset-left, 0px));
+    height: 100%;
   }
 
   #infoSplit2 {
     /* the part of the info page that contains the poster image and trailer */
-    width: calc(70vw - env(safe-area-inset-left, 0px));
-    height: 100vh;
+    width: calc(70% - env(safe-area-inset-left, 0px));
+    height: 100%;
   }
 
   #infoSplit2::after {
     /* the gradient that partly covers the poster and trailer */
-    width: 3vw;
-    height: 100vh;
+    width: 3%;
+    height: 100%;
     /* Height of the gradient overlay */
     background: linear-gradient(to left, rgba(255, 255, 255, 0), var(--mflixBlue));
   }
@@ -714,8 +757,8 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
 @media (orientation: portrait) {
   #menubar {
     /* the side or bottom bar used to navigate to different pages */
-    width: 100vw;
-    height: 10vh;
+    width: 100%;
+    height: 10%;
     bottom: 0;
     display: flex;
     flex-direction: row;
@@ -724,14 +767,13 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
 
     div {
       /* a menubar option */
-      display: inline-block;
-      width: 20vw;
+      display: flex;
+      width: 20%;
       height: 100%;
 
       div {
         /* the menu item text */
         display: none;
-        font-size: 0em;
       }
 
       img {
@@ -740,7 +782,6 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
         height: auto;
         margin: auto;
         display: block;
-        margin-top: 25%;
       }
     }
 
@@ -764,25 +805,25 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
 
   #infoPage {
     /* the page that shows the info about the media */
-    width: 100vw;
+    width: 100%;
   }
 
   #infoSplit1 {
     /* the element that contains the movie title, ratings, release date, runtime, and description */
-    width: 100vw;
-    height: 60vh;
+    width: 100%;
+    height: 60%;
   }
 
   #infoSplit2 {
     /* the part of the info page that contains the poster image and trailer */
-    width: 100vw;
-    height: 40vh;
+    width: 100%;
+    height: 40%;
   }
 
   #infoSplit2::after {
     /* the gradient that partly covers the poster and trailer */
     width: 100%;
-    height: 3vh;
+    height: 3%;
     /* Height of the gradient overlay */
     background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
   }
