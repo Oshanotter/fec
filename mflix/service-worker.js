@@ -22,8 +22,11 @@ const mainFiles = [
 // cache the icons for the menu bar and other stuff
 const generalIcons = [
   'account_circle.svg',
+  'add.svg',
   'arrow_back.svg',
   'close.svg',
+  'delete.svg',
+  'edit.svg',
   'history.svg',
   'home.svg',
   'list.svg',
@@ -35,6 +38,7 @@ const generalIcons = [
   'playlist_add.svg',
   'playlist_remove.svg',
   'resume.svg',
+  'save.svg',
   'search.svg',
   'tv.svg'
 ];

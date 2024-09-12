@@ -15,6 +15,13 @@ function main() {
   appendLoadingPosters('tvShowsPage', 20);
   appendLoadingPosters('tvShowsPage');
 
+  var movieHistory = document.getElementById('moviesHistory');
+  appendLoadingPosters(movieHistory, 10);
+  var tvHistory = document.getElementById('tvShowsHistory');
+  appendLoadingPosters(tvHistory, 10);
+  var loadingLists = document.getElementById('loadingLists');
+  appendLoadingPosters(loadingLists, 10);
+
   // authenticate the current user immediately
   authenticate();
 
@@ -25,8 +32,12 @@ function main() {
   addScrollListeners();
   // add the event listeners for the search page
   addSearchListeners();
-  // add the event listebers for items in the header
+  // add the event listeners for items in the header
   addHeaderListeners();
+  // add listeners for the zoom function
+  addZoomListeners();
+  //add listeners fot the login page
+  addLoginPageListeners();
 
   // Add event listener for changes in orientation to adjust the max height of the overview flex element
   window.addEventListener('orientationchange', function() {
@@ -70,7 +81,7 @@ function countColumns() {
 
   // find the current page
   var mainPages = document.querySelectorAll('.main');
-  for (i = 0; i < mainPages.length; i++) {
+  for (var i = 0; i < mainPages.length; i++) {
     var main = mainPages[i];
     if (!main.classList.contains('hidden')) {
       break;
@@ -127,6 +138,30 @@ function getLocalStorage(keyPath) {
   return keyPath.split('.').reduce((acc, part) => acc && acc[part], fecDict);
 }
 
+function alertMessage(message) {
+  // displays an alert message in the bottom right corener
+
+  var old = document.getElementById('alertMessage');
+  if (old) {
+    old.remove();
+  }
+
+  var div = document.createElement('div');
+  div.id = "alertMessage";
+  div.innerText = message;
+
+  var img = document.createElement('img');
+  img.src = "icons/general/close.svg";
+  img.classList.add('button');
+  img.onclick = function() {
+    div.remove();
+  }
+  div.appendChild(img);
+
+  document.body.appendChild(div);
+
+}
+
 
 
 // functions for loging in users
@@ -161,6 +196,10 @@ function authenticate() {
 function login(username, passwordHash) {
   // login to the website to get the apiKey
 
+  // disable the inputs
+  document.getElementById("username").setAttribute('disabled', true);
+  document.getElementById("password").setAttribute('disabled', true)
+
   // get the loginPage and error message div
   var loginPage = document.getElementById('loginPage');
   var errorMsgDiv = loginPage.children[4];
@@ -189,7 +228,7 @@ function login(username, passwordHash) {
 
   // contact the google apps script to validate login information
   var url = appsScriptBaseUrl + "?exec=login&username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(passwordHash);
-  //console.log(url);
+  console.log(url);
   fetch(url)
     .then((response) => {
       //console.log(response.status);
@@ -202,6 +241,8 @@ function login(username, passwordHash) {
         loginPage.classList.remove("hidden");
         errorMsgDiv.innerText = response['error'];
         loadingGif.classList.add('hidden');
+        document.getElementById("username").removeAttribute('disabled');
+        document.getElementById("password").removeAttribute('disabled');
         return;
       }
       setLocalStorage("username", username);
@@ -232,7 +273,7 @@ function displayPage(pageID) {
   loadPageContent(pageID);
 
   // mark the selected page in the menubar as active and remove the other active classes
-  var currentTab = document.querySelector('.active');
+  var currentTab = document.querySelector('#menubar > .active');
   if (currentTab) {
     currentTab.classList.remove('active');
   }
@@ -249,7 +290,7 @@ function displayPage(pageID) {
 
   // find the right page and make it visible, but hide the others
   var pageList = ['searchPage', 'homePage', 'moviesPage', 'tvShowsPage', 'myListsPage', 'settingsPage'];
-  for (i = 0; i < pageList.length; i++) {
+  for (var i = 0; i < pageList.length; i++) {
     var id = pageList[i];
     var page = document.getElementById(id);
     page.classList.add('hidden');
@@ -291,6 +332,9 @@ function loadPageContent(category) {
 
   } else if (category == 'tvShowsPage') {
     getLatestMedia(1, category);
+  } else if (category == 'myListsPage') {
+    // load the content for the myListsPage
+    getWatchLists();
   }
 }
 
@@ -323,7 +367,7 @@ function getLatestMedia(pageNum = 1, category) {
     .then(data => {
       console.log(data)
       idList = [];
-      for (i = 0; i < data.result.length; i++) {
+      for (var i = 0; i < data.result.length; i++) {
         idList[i] = data.result[i].tmdb_id;
       }
 
@@ -380,7 +424,7 @@ function makePosterDiv(id, title = "undefined title", quality = "", imgURL, medi
   var mainElm = document.createElement('div');
   mainElm.classList.add('posterContainer');
   mainElm.dataset.id = id;
-  console.log(id);
+  mainElm.dataset.mediaType = mediaType;
 
   var qaulityElm = document.createElement('div');
   qaulityElm.innerText = quality;
@@ -411,7 +455,16 @@ function makePosterDiv(id, title = "undefined title", quality = "", imgURL, medi
 function appendLoadingPosters(mediaPageID, repeatNum) {
   // creates loading posters to display at the bottom of the movies and tv shows page
 
-  var container = document.getElementById(mediaPageID).querySelector('.container');
+  // if the page id is a string, get the container in that string
+  if (typeof mediaPageID == "string") {
+    var container = document.getElementById(mediaPageID).querySelector('.container');
+
+  } else {
+    // mediaPageID is an element, so append the posters directly to it
+    var container = mediaPageID;
+
+  }
+
 
   if (!repeatNum) {
     var numColumns = countColumns();
@@ -443,7 +496,15 @@ function appendLoadingPosters(mediaPageID, repeatNum) {
 function removeLoadingPosters(mediaPageID) {
   // removes the loading posters at the bottom of the tv shows and movies pages
 
-  var container = document.getElementById(mediaPageID).querySelector('.container');
+  // if the page id is a string, get the container in that string
+  if (typeof mediaPageID == "string") {
+    var container = document.getElementById(mediaPageID).querySelector('.container');
+
+  } else {
+    // mediaPageID is an element, so remove the posters directly from it
+    var container = mediaPageID;
+
+  }
 
   var loadingPosters = container.querySelectorAll('.noHover');
 
@@ -458,11 +519,15 @@ function removeLoadingPosters(mediaPageID) {
 function displayInfoPage(mediaId, mediaType, optionalTitle) {
   // display the info page with the results about the movie or tv show
 
-  // load a video right away so that the player on iOS doesn't error on first attempt
-  if (!trailerPlayer.getVideoData().video_id) {
-    trailerPlayer.loadVideoById('none');
-    trailerPlayer.playVideo();
-    trailerPlayer.stopVideo();
+  // load a video right away so that the player on mobile doesn't error on first attempt
+  try {
+    if (!trailerPlayer.getVideoData().video_id) {
+      trailerPlayer.loadVideoById('none');
+      trailerPlayer.playVideo();
+      trailerPlayer.stopVideo();
+    }
+  } catch (e) {
+    console.error("Could not load trailer immediately for mobile")
   }
 
   if (mediaType == 'movie') {
@@ -477,6 +542,8 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
       // Display media info
       var infoPage = document.getElementById('infoPage');
       infoPage.classList.remove('hidden');
+      infoPage.dataset.id = mediaId;
+      infoPage.dataset.mediaType = mediaType;
       var infoSplit1 = document.getElementById('infoSplit1');
       // set the title
       var titleElem = infoSplit1.children[0];
@@ -1121,8 +1188,560 @@ function displaySearchResults(dict) {
 
 
 // functions that deal with the user's watch lists
-function addToList() {
-  alert('Add to list function coming soon');
+function getWatchLists() {
+  // gets the user's lists from the server and displays them
+
+  // stop the function if the watch lists are already loaded
+  var loadingList = document.getElementById('loadingLists').parentNode;
+  if (loadingList.classList.contains('hidden')) {
+    return false;
+  }
+
+  // if the container content is loading, don't do anything
+  var container = document.querySelector('#myListsPage').getElementsByClassName('container')[0];
+  if (container.dataset.loading == "true") {
+    return;
+  }
+  container.dataset.loading = "true";
+
+  var url = appsScriptBaseUrl + "?exec=getLists&username=" + encodeURIComponent(getLocalStorage('username')) + "&password=" + encodeURIComponent(getLocalStorage('password'));
+
+  fetch(url)
+    .then((response) => {
+      //console.log(response.status);
+      return response.json();
+    })
+    .then((response) => {
+
+      var userLists = response['userLists'];
+      if (!userLists) {
+        alertMessage(response['error']);
+        return;
+      }
+
+      // populate the add to list dropdown right away
+      populateAddToListDropdown(userLists);
+
+      // make new lists to append to the container
+      for (var i = 0; i < userLists.length; i++) {
+        var mainDict = userLists[i];
+        var name = mainDict['name'];
+        var mediaList = mainDict['media'];
+        appendExistingList(name, mediaList);
+      }
+
+      // after all the lists are done loading, remove the loading list and show the list edit container
+      loadingList.classList.add('hidden');
+      var listEditContainer = document.getElementById('listEditContainer');
+      listEditContainer.classList.remove('hidden');
+      container.dataset.loading = "false";
+
+    })
+    .catch(error => {
+
+      alertMessage(error);
+      console.error(error);
+    });
+
+}
+
+function showList(list) {
+  // show either the watch lists tab or the history tab
+
+  if (list == "history") {
+    var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)");
+    var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)")
+    var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
+    var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
+  } else {
+    var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)");
+    var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)")
+    var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
+    var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
+  }
+
+  activeButton.classList.remove('active');
+  inactiveButton.classList.add('active');
+  activePage.classList.add('hidden');
+  inactivePage.classList.remove('hidden');
+}
+
+function createNewList() {
+  // opens a popup that asks the user to enter the list name
+
+  // if the container content is loading, don't do anything
+  var container = document.querySelector('#myListsPage').getElementsByClassName('container')[0];
+  if (container.dataset.loading == "true") {
+    return;
+  }
+
+  // generate a new list
+  var newList = document.createElement('div');
+  newList.classList.add('listContainer');
+  newList.classList.add('editList');
+  newList.innerHTML = '<h4><div>New List Name </div><input type="text" placeholder="New List Name"><div class="button"><img src="icons/general/delete.svg" alt="delete"></div></h4><div class="horizontalScroll"><div>Add Movies or TV Shows to this list...</div></div>';
+
+  // add an onclick event to the delete button
+  newList.querySelector('div:nth-of-type(2)').onclick = function() {
+    newList.remove();
+  };
+
+  var listEditContainer = document.getElementById('listEditContainer');
+  listEditContainer.parentNode.insertBefore(newList, listEditContainer);
+
+  // scroll to the bottom of the page
+  var page = document.getElementById('myListsPage');
+  page.scrollTop = page.scrollHeight;
+
+  // focus on the input tag
+  newList.querySelector('input').focus();
+
+  // change the edit list button to the save lists button
+  var editBtn = document.getElementById('listEditContainer').children[1];
+  var saveBtn = document.getElementById('listEditContainer').children[2];
+  editBtn.classList.add('hidden');
+  saveBtn.classList.remove('hidden');
+}
+
+function appendExistingList(name, mediaList) {
+  // takes the dict as input and creates a new list on the watch list page
+
+  // generate a new list
+  var newList = document.createElement('div');
+  newList.classList.add('listContainer');
+  newList.innerHTML = '<h4><div>' + name + '</div><input type="text" placeholder="New List Name" value="' + name + '"><div class="button"><img src="icons/general/delete.svg" alt="delete"></div></h4><div class="horizontalScroll"><div>Add Movies or TV Shows to this list...</div></div>';
+
+  // add an onclick event to the delete button
+  newList.querySelector('div:nth-of-type(2)').onclick = function() {
+    newList.remove();
+  };
+
+  // Creating an array of fetch promises for each movie ID
+  const movieDetailsPromises = mediaList.map(dict =>
+    fetch('https://api.themoviedb.org/3/' + Object.values(dict)[0] + '/' + Object.keys(dict)[0] + '?api_key=' + apiKey)
+    .then(response => response.json())
+    // Object.values(dict)[0] is the media type for the given item
+    // Object.keys(dict)[0] is the id fot the given item
+  );
+
+  // Handling the resolved promises
+  Promise.all(movieDetailsPromises)
+    .then(movies => {
+
+      var container = newList.querySelector('.horizontalScroll');
+
+      // Iterating over each movie to extract and log the cover URL
+      for (let i = 0; i < movies.length; i++) {
+        let movie = movies[i];
+
+        var id = Object.keys(mediaList[i])[0]; // this gets the key from the dict at index i in the mediaList
+        var title = movie.title || movie.name;
+        var mediaType = mediaList[i][id]; // this gets the value from the dict at index 1 in the mediaList
+        if (mediaType == 'tv') {
+          var qualityDiv = "TV";
+        } else {
+          var qualityDiv = "Movie";
+        }
+        var imgURL = movie.poster_path;
+
+        var poster = makePosterDiv(id, title, qualityDiv, imgURL, mediaType);
+
+        if (i == 0) {
+          container.innerHTML = '';
+        }
+
+        container.appendChild(poster);
+      }
+
+    })
+    .catch(error => console.error('Error fetching movie details:', error));
+
+  // append the list to just before the llist edit container
+  var listEditContainer = document.getElementById('listEditContainer')
+  listEditContainer.parentNode.insertBefore(newList, listEditContainer);
+
+}
+
+function editLists() {
+  // changes the page to the edit list layout
+
+  // change the edit list button to the save lists button
+  var editBtn = document.getElementById('listEditContainer').children[1];
+  var saveBtn = document.getElementById('listEditContainer').children[2];
+  editBtn.classList.add('hidden');
+  saveBtn.classList.remove('hidden');
+
+  var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer');
+
+  // start at index 1 to skip over the loading lists element
+  for (var i = 1; i < lists.length; i++) {
+    var list = lists[i];
+    list.classList.add('editList');
+    var title = list.querySelector('h4 > div:nth-of-type(1)').innerText;
+    list.querySelector('input').value = title;
+  }
+}
+
+function saveLists(saveImmediately = false) {
+  // saves all of the lists and sends their data back to the server
+
+  // if the container content is loading, don't do anything
+  var container = document.querySelector('#myListsPage').getElementsByClassName('container')[0];
+  if (container.dataset.loading == "true" && saveImmediately == false) {
+    console.log('already saving')
+    return;
+  }
+
+  // set the dataset to loading true
+  container.dataset.loading = "true";
+  var saveBtn = document.getElementById('listEditContainer').children[2];
+  saveBtn.querySelector('img').src = "icons/general/loading_wheel.gif";
+
+  var lists = container.querySelectorAll('.listContainer');
+  var masterList = [];
+
+  // start at index 1 to skip over the loading lists element
+  for (var i = 1; i < lists.length; i++) {
+    var list = lists[i];
+
+    // if the list is hidden, skip it
+    if (list.classList.contains('hidden')) {
+      continue;
+    }
+
+    var input = list.querySelector('input').value.trim();
+    var title = input || 'New List';
+    list.querySelector('h4 > div:nth-of-type(1)').innerText = title;
+    list.classList.remove('editList');
+
+    // get all of the ids of the media in the list
+    var children = list.querySelectorAll('.posterContainer');
+    var childrenIds = [];
+    for (var j = 0; j < children.length; j++) {
+      var id = children[j].dataset.id;
+      var mediaType = children[j].dataset.mediaType;
+      var tempDict = {};
+      tempDict[id] = mediaType;
+      childrenIds[j] = tempDict;
+    }
+
+    // add the dict to the list
+    var dict = {
+      name: title,
+      media: childrenIds
+    };
+
+    masterList.push(dict);
+  }
+
+  // contact the google apps script to update the lists
+  var masterListString = JSON.stringify(masterList);
+  var url = appsScriptBaseUrl + "?exec=updateLists&username=" + encodeURIComponent(getLocalStorage('username')) + "&password=" + encodeURIComponent(getLocalStorage('password')) + "&newList=" + encodeURIComponent(masterListString);
+
+  fetch(url)
+    .then((response) => {
+      //console.log(response.status);
+      return response.json();
+    })
+    .then((response) => {
+
+      var success = response['success'];
+      if (!success) {
+        alertMessage(response['error']);
+      }
+
+      // change the buttons back to create list and edit lists
+      var editBtn = document.getElementById('listEditContainer').children[1];
+      var saveBtn = document.getElementById('listEditContainer').children[2];
+      editBtn.classList.remove('hidden');
+      saveBtn.classList.add('hidden');
+      saveBtn.querySelector('img').src = "icons/general/save.svg";
+
+      container.dataset.loading = "false";
+
+    })
+    .catch(error => {
+
+      // change the buttons back to create list and edit lists
+      var editBtn = document.getElementById('listEditContainer').children[1];
+      var saveBtn = document.getElementById('listEditContainer').children[2];
+      editBtn.classList.remove('hidden');
+      saveBtn.classList.add('hidden');
+      saveBtn.querySelector('img').src = "icons/general/save.svg";
+
+      container.dataset.loading = "false";
+
+      alertMessage(error);
+    });
+}
+
+function dropdownAddToListMenu() {
+  // this function makes the dropdown menu appear for the add to list button on the info page
+
+  var dropdownMenu = document.getElementById('addToListDropdown');
+
+  // don't do anything of the dropdownMenu is already showing
+  if (!dropdownMenu.classList.contains('hidden')) {
+    return;
+  }
+  dropdownMenu.classList.remove('hidden');
+
+  var alreadyPopulated = getWatchLists();
+
+  if (alreadyPopulated != undefined && alreadyPopulated == false) {
+    populateAddToListDropdown();
+  }
+
+  var resetCreateBtn = function() {
+    // hide the create button and clear the input
+    var container = document.querySelector("#addToListDropdown > div > div");
+    var mainElm = container.children[container.children.length - 2];
+    var input = mainElm.querySelector('input');
+    mainElm.classList.add('hidden');
+    input.value = "";
+    input.blur();
+  }
+
+  // add a click event listener for mobile users so that the menu will disappear
+  var clickFunction = function(e) {
+    // don't do anything if the user clicks inside of the dropdown menu
+    if (dropdownMenu.contains(e.srcElement)) {
+      return;
+    }
+    // if the user clicks outside the dropdown, hide it and remove the listener
+    dropdownMenu.classList.add('hidden');
+    document.body.removeEventListener('click', clickFunction);
+
+    // hide the create button and clear the input
+    resetCreateBtn();
+  }
+
+  var mouseLeaveFunction = function() {
+    // hide the dropdown
+    dropdownMenu.classList.add('hidden');
+    dropdownMenu.removeEventListener('mouseleave', mouseLeaveFunction);
+    document.body.removeEventListener('click', clickFunction);
+
+    // hide the create button and clear the input
+    resetCreateBtn();
+  }
+
+  // add the click event listener with a set timeout function, otherwise it will regester the current click as well
+  setTimeout(function() {
+    document.body.addEventListener('click', clickFunction);
+    dropdownMenu.addEventListener('mouseleave', mouseLeaveFunction);
+  }, 0000);
+
+}
+
+function populateAddToListDropdown(lists) {
+  // creates the buttons inside of the add to list dropdown
+
+  // if lists is not defined, get the lists from the myListsPage
+  if (!lists) {
+    var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer');
+    var masterList = [];
+
+    // start at index 1 to skip over the loading lists element
+    for (var i = 1; i < lists.length; i++) {
+      var list = lists[i];
+
+      // if the list is hidden, skip it
+      if (list.classList.contains('hidden')) {
+        continue;
+      }
+
+      var input = list.querySelector('input').value.trim();
+      var title = input || 'New List';
+      list.querySelector('h4 > div:nth-of-type(1)').innerText = title;
+      list.classList.remove('editList');
+
+      // get all of the ids of the media in the list
+      var children = list.querySelectorAll('.posterContainer');
+      var childrenIds = [];
+      for (var j = 0; j < children.length; j++) {
+        var id = children[j].dataset.id;
+        var mediaType = children[j].dataset.mediaType;
+        var tempDict = {};
+        tempDict[id] = mediaType;
+        childrenIds[j] = tempDict;
+      }
+
+      // add the dict to the list
+      var dict = {
+        name: title,
+        media: childrenIds
+      };
+
+      masterList.push(dict);
+    }
+
+    var lists = masterList;
+
+  }
+
+  // remove the previous elements
+  var container = document.querySelector('#addToListDropdown > div > div');
+  while (container.children.length > 2) {
+    container.removeChild(container.firstElementChild);
+  }
+
+  // now create the list elements to populate the dropdown
+  for (let i = 0; i < lists.length; i++) {
+    var main = document.createElement('div');
+    main.classList.add('button');
+    var img = document.createElement('img');
+    main.appendChild(img);
+    var title = document.createElement('div');
+    title.innerText = lists[i].name;
+    main.appendChild(title);
+
+    // find out if the movie or tv show is already in the list
+    var id = document.getElementById('infoPage').dataset.id;
+    var mediaType = document.getElementById('infoPage').dataset.mediaType;
+    var list = lists[i].media;
+    var dict = {};
+    dict[id] = mediaType;
+    var exists = list.some(item =>
+      JSON.stringify(item) === JSON.stringify(dict)
+    );
+    if (exists) {
+      img.src = "icons/general/playlist_remove.svg";
+      main.onclick = function() {
+        removeFromList(id, mediaType, i);
+      }
+      main.classList.add('onList');
+
+    } else {
+      img.src = "icons/general/playlist_add.svg";
+      main.onclick = function() {
+        addToList(id, mediaType, i);
+      }
+
+    }
+
+    var secondToLastChild = container.children[container.children.length - 2];
+    container.insertBefore(main, secondToLastChild);
+  }
+
+  // show the add to list button
+  container.children[container.children.length - 1].classList.remove('hidden');
+
+}
+
+function addToList(id, mediaType, listIndex) {
+  // adds the media to the specified list index
+
+  var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer:not(.hidden)');
+  var list = lists[listIndex];
+
+  var container = list.querySelector('.horizontalScroll');
+
+  // get the media details from the api
+  var url = "https://api.themoviedb.org/3/" + mediaType + "/" + id + "?api_key=" + apiKey;
+
+  fetch(url)
+    .then(response => response.json()
+      .then(data => {
+
+        var title = data.title || data.name;
+        var imgURL = data.poster_path;
+        if (mediaType == "tv") {
+          var qualityDiv = "TV";
+        } else {
+          var qualityDiv = "Movie";
+        }
+
+        var poster = makePosterDiv(id, title, qualityDiv, imgURL, mediaType);
+
+        // check to see if the container has the placeholder text because it is empty
+        var firstChild = container.children[0];
+        if (!firstChild.classList.contains('posterContainer')) {
+          // remove the 'empty list' text element
+          firstChild.remove();
+        }
+
+        container.appendChild(poster);
+
+        // repopulate the dropdown after a timeout, so the dropdown listener doesn't get confused
+        setTimeout(function() {
+          populateAddToListDropdown();
+        }, 0);
+
+        // save the lists immediately
+        saveLists(true);
+
+      }));
+
+}
+
+function removeFromList(id, mediaType, listIndex) {
+  // removes the media from the specified list index
+
+  var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer:not(.hidden)');
+  var list = lists[listIndex];
+
+  var container = list.querySelector('.horizontalScroll');
+
+  var poster = container.querySelector('[data-id="' + id + '"][data-media-type="' + mediaType + '"]');
+  poster.remove();
+
+  // after removing the poster, if there are no elements in the list, add the 'empty list' element to it
+  if (container.children.length == 0) {
+    var newDiv = document.createElement('div');
+    newDiv.innerText = "Add Movies or TV Shows to this list...";
+    container.appendChild(newDiv);
+  }
+
+  // repopulate the dropdown after a timeout, so the dropdown listener doesn't get confused
+  setTimeout(function() {
+    populateAddToListDropdown();
+  }, 0);
+
+  // save the lists immediately
+  saveLists(true);
+
+}
+
+function createNewListOnInfoPage() {
+  // display the list maker on the dropdown
+
+  var container = document.querySelector("#addToListDropdown > div > div");
+  var mainElm = container.children[container.children.length - 2];
+
+  mainElm.classList.remove('hidden');
+
+  // scroll to the bottom of the container
+  container.scrollTop = container.scrollHeight;
+
+  // focus on the input
+  var input = mainElm.querySelector('input');
+  input.focus();
+
+}
+
+function removeCreateButtonOnDropdown(decision) {
+  // removes the create button on the dropdwn and either creates a new list or deletes the draft
+
+  var container = document.querySelector("#addToListDropdown > div > div");
+  var mainElm = container.children[container.children.length - 2];
+  var input = mainElm.querySelector('input');
+  var title = input.value.trim();
+  if (title == "") {
+    var title = "New List";
+  }
+
+  if (decision == "save") {
+    // save the new list
+    appendExistingList(title, []);
+    saveLists(true);
+  }
+
+  // hide the create button, clear the input, and repopulate the dropdown
+  mainElm.classList.add('hidden');
+  input.value = "";
+  input.blur();
+  populateAddToListDropdown();
 }
 
 
@@ -1209,13 +1828,6 @@ function setZoom(zoomLevel) {
   setLocalStorage('Mflix.settings.zoom', newZoom);
 }
 
-var zoomInput = document.getElementById('zoomInput');
-zoomInput.addEventListener('change', function() {
-  var zoomValue = Number(zoomInput.value);
-  setZoom(zoomValue);
-});
-
-
 
 
 // functions that add event listeners or that run immediately
@@ -1275,13 +1887,14 @@ function addSearchListeners() {
     }
   });
 
-  // add event listener for when the user presses enter in the ssearch bar
+  // add event listener for when the user presses enter in the search bar
   document.getElementById("searchInput").addEventListener("keydown", function(event) {
     if (event.key === "Enter") { // Check if the Enter key is pressed
       var title = document.getElementById('searchInput').value;
       searchMoviesAndTvShows(title).then(dict => {
           displaySearchResults(dict);
           hideSearchDropdown();
+          document.getElementById('searchInput').blur();
         })
         .catch(error => {
           console.error("Error fetching movies and TV shows:", error);
@@ -1311,6 +1924,39 @@ function addHeaderListeners() {
     var dropdown = document.getElementById('userDropdownOptions');
     dropdown.classList.add('hidden');
   });
+}
+
+function addZoomListeners() {
+  // listen for when the input for the zoom changes
+
+  var zoomInput = document.getElementById('zoomInput');
+  zoomInput.addEventListener('change', function() {
+    var zoomValue = Number(zoomInput.value);
+    setZoom(zoomValue);
+  });
+
+}
+
+function addLoginPageListeners() {
+  // adds listeners for the login page
+
+  // add an event listener for the username
+  document.getElementById("username").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") { // Check if the Enter key is pressed
+      // focus on the password
+      document.getElementById("password").focus();
+    }
+  });
+
+  // add an event listener for the password
+  document.getElementById("password").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") { // Check if the Enter key is pressed
+      // login and blur
+      document.getElementById("password").blur();
+      login();
+    }
+  });
+
 }
 
 async function getAvalibleSource() {

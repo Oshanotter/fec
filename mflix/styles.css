@@ -13,6 +13,9 @@ BELOW ARE SOME VARIABLES THAT WILL HELP DEFINE VALUES FOR OTHER ELEMENTS
   --whiteFilter: invert(98%) sepia(1%) saturate(215%) hue-rotate(84deg) brightness(115%) contrast(84%);
   /* this filter produces var(--mflixOrange) as long as the original image is #000000 */
   --orangeFilter: invert(75%) sepia(32%) saturate(6103%) hue-rotate(329deg) brightness(104%) contrast(101%);
+  /* the colors for the error elements */
+  --errorRedBG: #ff9a91;
+  --errorRedTXT: #ff1500;
 }
 
 /*
@@ -55,6 +58,47 @@ BELOW ARE SOME COMMONLY USED CLASSES
 .flex {
   flex: 1;
   /* This element will grow or shrink to take up the remaining space */
+}
+
+.horizontalScroll {
+  /* the horizontal scroll elements for history and such */
+  width: 90%;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: row;
+  padding: 0 5% 1em 5%;
+
+  .posterContainer {
+    flex-shrink: 0;
+  }
+
+  >div:not(.posterContainer) {
+    height: 250px;
+    display: flex;
+    align-items: center;
+    margin-left: 2em;
+  }
+}
+
+#alertMessage {
+  padding: 0.5em 1em;
+  border: 1px solid var(--errorRedTXT);
+  border-radius: 3px;
+  background-color: var(--errorRedBG);
+  color: var(--errorRedTXT);
+  position: absolute;
+  bottom: 2em;
+  right: 2em;
+  max-width: 80%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  img {
+    filter: var(--whiteFilter);
+    margin-left: 1em;
+  }
 }
 
 /*
@@ -247,7 +291,6 @@ BELOW ARE ELEMENTS RELATING TO THE INFO PAGE
   /* the element that contains the movie title, ratings, release date, runtime, and description */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 
   h1 {
     /* the title */
@@ -355,7 +398,7 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
     }
   }
 
-  .button {
+  >.button, >div>.button {
     /* all other buttons in the buttonContainer */
     border: 2px solid var(--mflixOrange);
     background-color: var(--mflixBlue);
@@ -374,7 +417,7 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
     }
   }
 
-  >div:nth-of-type(4) {
+  >div:nth-of-type(5) {
     /* the element that holds the trailer buttons */
     display: flex;
     flex-direction: row;
@@ -392,6 +435,96 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
       margin-left: 0.5vh;
       width: calc(50% - 0.5vh);
     }
+  }
+}
+
+#addToListDropdown {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  >div {
+    /* the main element of the dropdown */
+    position: absolute;
+    background-color: var(--mflixGrey);
+    z-index: 1;
+    border-radius: 5px;
+    border: 2px solid var(--mflixWhite);
+
+    >div {
+      /* the inner container that holds the buttons */
+      background-color: inherit;
+      overflow: scroll;
+      padding: 0.5em 0.5em 0.25em 0.5em;
+      border-radius: inherit;
+      box-sizing: border-box;
+
+      >.loadingWave {
+        /* the loading elements */
+        height: 1em;
+        border: none;
+      }
+
+      >div {
+        /* the actual buttons */
+        background-color: inherit;
+        border: 1px solid var(--mflixOrange);
+        border-radius: inherit;
+        margin-bottom: 0.25em;
+        padding: 0.25em 0.5em;
+        display: flex;
+        align-items: center;
+
+        >img {
+          /* the image of the button */
+          filter: var(--whiteFilter);
+          margin-right: 0.25em;
+          height: 1.25em;
+        }
+
+        >div {
+          /* the text of the button */
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          -webkit-line-clamp: 1;
+        }
+
+        >input {
+          /* the input tag for the create button */
+          margin-right: 0.5em;
+        }
+      }
+
+      >div.onList {
+        /* the style of the button if the media is already on the list */
+        color: var(--mflixOrange);
+
+        img {
+          filter: var(--orangeFilter);
+        }
+      }
+
+      >div:last-child {
+        /* the create new list button */
+        background-color: var(--mflixOrange);
+      }
+    }
+  }
+
+  >div::after {
+    /* the cat ear */
+    content: '';
+    position: absolute;
+    width: 1.5em;
+    height: 1.5em;
+    background-color: var(--mflixGrey);
+    transform: rotate(45deg);
+    border: 2px solid var(--mflixWhite);
+    z-index: -1;
   }
 }
 
@@ -580,8 +713,8 @@ BELOW ARE THE ELEMENTS RELATING TO THE LOGIN PAGE
 
   div:nth-of-type(1) {
     /* the error element */
-    background-color: #ff9a91;
-    color: #ff1500;
+    background-color: var(--errorRedBG);
+    color: var(--errorRedTXT);
     height: 5vh;
     line-height: 5vh;
     margin: 1vh 0vh 1vh 0vh;
@@ -643,6 +776,7 @@ BELOW ARE THE ELEMENTS RELATING TO THE SETTINGS PAGE
     }
 
     .button {
+      background-color: var(--mflixBlue);
       border: 2px solid var(--mflixOrange);
       border-radius: 999px;
       margin: 5px;
@@ -653,6 +787,110 @@ BELOW ARE THE ELEMENTS RELATING TO THE SETTINGS PAGE
       justify-content: center;
       align-items: center;
       font-weight: bold;
+    }
+  }
+}
+
+/*
+
+BELOW ARE ELEMENTS RELATING TO THE MY LISTS PAGE
+
+*/
+#myListsPage {
+  >div:nth-of-type(1) {
+    /* the container for the two top buttons */
+    display: flex;
+    flex-direction: row;
+    margin: 0 0 1em 5%;
+
+    .button {
+      /* the watch lists and history buttons */
+      background-color: var(--mflixGrey);
+      margin: 0em 0.5em;
+      padding: 1em;
+      border-radius: 15px;
+      min-width: 15%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        height: 1.5em;
+        margin-right: 0.5em;
+        filter: var(--whiteFilter);
+      }
+    }
+
+    .active {
+      background-color: var(--mflixOrange);
+    }
+  }
+
+  .listContainer {
+    width: 100%;
+
+    h4 {
+      /* the headers for list sections */
+      width: 95%;
+      border-top: 2px solid var(--mflixOrange);
+      padding-top: 0.5em;
+      margin: 0 0 0 5%;
+      display: flex;
+      flex-direction: row;
+
+      input {
+        display: none;
+      }
+
+      img {
+        display: none;
+        filter: var(--orangeFilter);
+        margin-left: 1em;
+      }
+    }
+  }
+
+  .editList {
+    h4 {
+      div:nth-of-type(1) {
+        display: none;
+      }
+
+      input {
+        display: block;
+      }
+
+      img {
+        display: block;
+      }
+    }
+  }
+}
+
+#listEditContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  border-top: 2px solid var(--mflixOrange);
+  width: 95%;
+  padding-top: 2em;
+  margin-left: 5%;
+
+  .button {
+    background-color: var(--mflixGrey);
+    border: 2px solid var(--mflixOrange);
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0em 0.5em;
+    padding: 0.25em 0.5em;
+
+    img {
+      height: 1.5em;
+      margin-right: 0.5em;
+      filter: var(--whiteFilter);
     }
   }
 }
@@ -747,6 +985,25 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
     /* the flex container that holds the description content */
     max-height: 100%;
   }
+
+  #addToListDropdown {
+    top: -1em;
+
+    >div {
+      left: 100%;
+      width: 120%;
+
+      >div {
+        max-height: 10em;
+      }
+    }
+
+    >div::after {
+      /* the cat ear */
+      left: -0.75em;
+      top: calc(50% - (1.5em / 2) - 2px);
+    }
+  }
 }
 
 /*
@@ -826,6 +1083,25 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
     height: 3%;
     /* Height of the gradient overlay */
     background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
+  }
+
+  #addToListDropdown {
+    top: -1.75em;
+
+    >div {
+      top: 2em;
+      width: 80%;
+
+      >div {
+        max-height: 15em;
+      }
+    }
+
+    >div::after {
+      /* the cat ear */
+      top: -0.75em;
+      left: calc(50% - (1.5em / 2) - 2px);
+    }
   }
 }
 
