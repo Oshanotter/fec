@@ -76,11 +76,11 @@
                 <h4>Loading Lists...</h4>
                 <div id="loadingLists" class="horizontalScroll"></div>
             </div>
-            <div id="listEditContainer" class="hidden">
-                <div class="button" onclick="createNewList()"><img src="icons/general/add.svg" alt="create">Create List</div>
-                <div class="button" onclick="editLists()"><img src="icons/general/edit.svg" alt="edit">Edit Lists</div>
-                <div class="button hidden" onclick="saveLists()"><img src="icons/general/save.svg" alt="save">Save Lists</div>
-            </div>
+        </div>
+        <div id="listEditContainer" class="hidden">
+            <div class="button" onclick="createNewList()"><img src="icons/general/add.svg" alt="create">Create List</div>
+            <div class="button" onclick="editLists()"><img src="icons/general/edit.svg" alt="edit">Edit Lists</div>
+            <div class="button hidden" onclick="saveLists()"><img src="icons/general/save.svg" alt="save">Save Lists</div>
         </div>
         <div class="container hidden">
             <div class="listContainer">
@@ -174,8 +174,12 @@
                             <div class="loadingWave"></div>
                             <div class="hidden onList">
                                 <input type="text" placeholder="New List Name" value="">
-                                <img src="icons/general/delete.svg" alt="delete" onclick="removeCreateButtonOnDropdown('delete')" class="button">
-                                <img src="icons/general/save.svg" alt="save" onclick="removeCreateButtonOnDropdown('save')" class="button">
+                                <div class="button">
+                                    <img src="icons/general/delete.svg" alt="delete" onclick="removeCreateButtonOnDropdown('delete')">
+                                </div>
+                                <div class="button">
+                                    <img src="icons/general/save.svg" alt="save" onclick="removeCreateButtonOnDropdown('save')">
+                                </div>
                             </div>
                             <div onclick="createNewListOnInfoPage()" class="button hidden">
                                 <img src="icons/general/add.svg" alt="add">

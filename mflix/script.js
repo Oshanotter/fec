@@ -162,6 +162,47 @@ function alertMessage(message) {
 
 }
 
+function moveElement(element, steps) {
+  // moves the specified element up or down amongst its siblings, without escaping its parent
+
+  var parent = element.parentNode;
+  var sibling = element;
+
+  // if the movement specified is 0, do nothing
+  if (steps == 0) {
+    return;
+  }
+
+  // if steps is positive, move the element up
+  if (steps > 0) {
+    for (var i = 0; i < steps; i++) {
+      const previousSibling = sibling.previousElementSibling;
+      if (previousSibling) {
+        parent.insertBefore(sibling, previousSibling);
+        sibling = previousSibling;
+      } else {
+        // reached the top, stop moving
+        break;
+      }
+    }
+  }
+
+  // if steps is negative, move the element down
+  if (steps < 0) {
+    for (var i = 0; i > steps; i--) {
+      const nextSibling = sibling.nextElementSibling;
+      if (nextSibling) {
+        parent.insertBefore(nextSibling, sibling);
+        sibling = nextSibling;
+      } else {
+        // reached the bottom, stop moving
+        break;
+      }
+    }
+  }
+
+}
+
 
 
 // functions for loging in users
@@ -1192,8 +1233,8 @@ function getWatchLists() {
   // gets the user's lists from the server and displays them
 
   // stop the function if the watch lists are already loaded
-  var loadingList = document.getElementById('loadingLists').parentNode;
-  if (loadingList.classList.contains('hidden')) {
+  var loadingList = document.getElementById('loadingLists');
+  if (!loadingList) {
     return false;
   }
 
@@ -1231,7 +1272,7 @@ function getWatchLists() {
       }
 
       // after all the lists are done loading, remove the loading list and show the list edit container
-      loadingList.classList.add('hidden');
+      loadingList.parentNode.remove();
       var listEditContainer = document.getElementById('listEditContainer');
       listEditContainer.classList.remove('hidden');
       container.dataset.loading = "false";
@@ -1249,15 +1290,19 @@ function showList(list) {
   // show either the watch lists tab or the history tab
 
   if (list == "history") {
+    alert('history coming soon...');
+    return;
     var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)");
     var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)")
     var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
     var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
+    document.getElementById('listEditContainer').classList.add('hidden');
   } else {
     var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)");
     var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)")
     var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
     var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
+    document.getElementById('listEditContainer').classList.remove('hidden');
   }
 
   activeButton.classList.remove('active');
@@ -1266,55 +1311,28 @@ function showList(list) {
   inactivePage.classList.remove('hidden');
 }
 
-function createNewList() {
-  // opens a popup that asks the user to enter the list name
-
-  // if the container content is loading, don't do anything
-  var container = document.querySelector('#myListsPage').getElementsByClassName('container')[0];
-  if (container.dataset.loading == "true") {
-    return;
-  }
-
-  // generate a new list
-  var newList = document.createElement('div');
-  newList.classList.add('listContainer');
-  newList.classList.add('editList');
-  newList.innerHTML = '<h4><div>New List Name </div><input type="text" placeholder="New List Name"><div class="button"><img src="icons/general/delete.svg" alt="delete"></div></h4><div class="horizontalScroll"><div>Add Movies or TV Shows to this list...</div></div>';
-
-  // add an onclick event to the delete button
-  newList.querySelector('div:nth-of-type(2)').onclick = function() {
-    newList.remove();
-  };
-
-  var listEditContainer = document.getElementById('listEditContainer');
-  listEditContainer.parentNode.insertBefore(newList, listEditContainer);
-
-  // scroll to the bottom of the page
-  var page = document.getElementById('myListsPage');
-  page.scrollTop = page.scrollHeight;
-
-  // focus on the input tag
-  newList.querySelector('input').focus();
-
-  // change the edit list button to the save lists button
-  var editBtn = document.getElementById('listEditContainer').children[1];
-  var saveBtn = document.getElementById('listEditContainer').children[2];
-  editBtn.classList.add('hidden');
-  saveBtn.classList.remove('hidden');
-}
-
 function appendExistingList(name, mediaList) {
   // takes the dict as input and creates a new list on the watch list page
 
   // generate a new list
   var newList = document.createElement('div');
   newList.classList.add('listContainer');
-  newList.innerHTML = '<h4><div>' + name + '</div><input type="text" placeholder="New List Name" value="' + name + '"><div class="button"><img src="icons/general/delete.svg" alt="delete"></div></h4><div class="horizontalScroll"><div>Add Movies or TV Shows to this list...</div></div>';
+  newList.innerHTML = '<h4><div><div>' + name + '</div><input type="text" placeholder="New List Name" value="' + name + '"><div class="button"><img src="icons/general/delete.svg" alt="delete"></div></div><div><div class="button"><img src="icons/general/arrow_up.svg" alt="up"></div><div class="button"><img src="icons/general/arrow_down.svg" alt="down"></div></div></h4><div class="horizontalScroll"><div>Add Movies or TV Shows to this list...</div></div>';
 
   // add an onclick event to the delete button
-  newList.querySelector('div:nth-of-type(2)').onclick = function() {
+  newList.querySelector('div:nth-of-type(1) > div:nth-of-type(2)').onclick = function() {
     newList.remove();
   };
+
+  // add an onclick event to move the list up amongst its siblings
+  newList.querySelector('div:nth-of-type(2) > div:nth-of-type(1)').onclick = function() {
+    moveElement(newList, 1);
+  }
+
+  // add an onclick event to move the list down amongst its siblings
+  newList.querySelector('div:nth-of-type(2) > div:nth-of-type(2)').onclick = function() {
+    moveElement(newList, -1);
+  }
 
   // Creating an array of fetch promises for each movie ID
   const movieDetailsPromises = mediaList.map(dict =>
@@ -1330,7 +1348,7 @@ function appendExistingList(name, mediaList) {
 
       var container = newList.querySelector('.horizontalScroll');
 
-      // Iterating over each movie to extract and log the cover URL
+      // loop through each modia to create a poster
       for (let i = 0; i < movies.length; i++) {
         let movie = movies[i];
 
@@ -1344,8 +1362,33 @@ function appendExistingList(name, mediaList) {
         }
         var imgURL = movie.poster_path;
 
-        var poster = makePosterDiv(id, title, qualityDiv, imgURL, mediaType);
+        // make the poster with the info, plus add an overlay that will move the media in the list
+        let poster = makePosterDiv(id, title, qualityDiv, imgURL, mediaType);
+        let buttonsOverlay = document.createElement('div');
+        buttonsOverlay.classList.add('posterListButtons');
+        buttonsOverlay.innerHTML = '<div class="button"><img src="icons/general/close.svg" alt="close"></div><div class="button"><img src="icons/general/arrow_back.svg" alt="left"></div><div class="button"><img src="icons/general/arrow_forward.svg" alt="right"></div>';
+        buttonsOverlay.querySelector('div:nth-of-type(1)').onclick = function() {
+          if (poster.parentNode.children.length == 1) {
+            poster.parentNode.innerHTML = '<div>Add Movies or TV Shows to this list...</div>';
+          } else {
+            poster.remove();
+          }
+          event.stopPropagation();
+        }
+        buttonsOverlay.querySelector('div:nth-of-type(2)').onclick = function() {
+          moveElement(poster, 1);
+          event.stopPropagation();
+        }
+        buttonsOverlay.querySelector('div:nth-of-type(3)').onclick = function() {
+          moveElement(poster, -1);
+          event.stopPropagation();
+        }
+        buttonsOverlay.onclick = function() {
+          event.stopPropagation();
+        }
+        poster.appendChild(buttonsOverlay);
 
+        // clear the previous element in the list, which is the placeholder text element
         if (i == 0) {
           container.innerHTML = '';
         }
@@ -1356,10 +1399,50 @@ function appendExistingList(name, mediaList) {
     })
     .catch(error => console.error('Error fetching movie details:', error));
 
-  // append the list to just before the llist edit container
-  var listEditContainer = document.getElementById('listEditContainer')
-  listEditContainer.parentNode.insertBefore(newList, listEditContainer);
+  // append the list to the container
+  var container = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
+  container.appendChild(newList);
 
+  // return the element
+  return newList;
+
+}
+
+function createNewList() {
+  // opens a popup that asks the user to enter the list name
+
+  // if the container content is loading, don't do anything
+  var container = document.querySelector('#myListsPage').getElementsByClassName('container')[0];
+  if (container.dataset.loading == "true") {
+    return;
+  }
+
+  // generate a new list
+  var newList = appendExistingList("New List", []);
+  newList.querySelector('input').value = "";
+  newList.classList.add('editList');
+
+  // scroll to the bottom of the page
+  var page = document.getElementById('myListsPage');
+  page.scrollTop = page.scrollHeight;
+
+  // focus on the input tag
+  newList.querySelector('input').focus();
+
+  // change the edit list button to the save lists button
+  var editBtn = document.getElementById('listEditContainer').children[1];
+  var saveBtn = document.getElementById('listEditContainer').children[2];
+  editBtn.classList.add('hidden');
+  saveBtn.classList.remove('hidden');
+
+  // observe for when the myListsPage is hidden, then save the unsaved lists
+  var targetElement = document.querySelectorAll('#myListsPage > .container')[0];
+  observeForHidden(targetElement, function() {
+    var unsavedList = targetElement.querySelectorAll('.editList');
+    if (unsavedList.length > 0) {
+      saveLists();
+    }
+  });
 }
 
 function editLists() {
@@ -1371,15 +1454,24 @@ function editLists() {
   editBtn.classList.add('hidden');
   saveBtn.classList.remove('hidden');
 
-  var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer');
+  var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer:not(.hidden)');
 
-  // start at index 1 to skip over the loading lists element
-  for (var i = 1; i < lists.length; i++) {
+  // loop through the elements
+  for (var i = 0; i < lists.length; i++) {
     var list = lists[i];
     list.classList.add('editList');
-    var title = list.querySelector('h4 > div:nth-of-type(1)').innerText;
+    var title = list.querySelector('h4 > div:nth-of-type(1) > div:nth-of-type(1)').innerText;
     list.querySelector('input').value = title;
   }
+
+  // observe for when the myListsPage is hidden, then save the unsaved lists
+  var targetElement = document.querySelectorAll('#myListsPage > .container')[0];
+  observeForHidden(targetElement, function() {
+    var unsavedList = targetElement.querySelectorAll('.editList');
+    if (unsavedList.length > 0) {
+      saveLists();
+    }
+  });
 }
 
 function saveLists(saveImmediately = false) {
@@ -1397,11 +1489,11 @@ function saveLists(saveImmediately = false) {
   var saveBtn = document.getElementById('listEditContainer').children[2];
   saveBtn.querySelector('img').src = "icons/general/loading_wheel.gif";
 
-  var lists = container.querySelectorAll('.listContainer');
+  var lists = container.querySelectorAll('.listContainer:not(.hidden)');
   var masterList = [];
 
-  // start at index 1 to skip over the loading lists element
-  for (var i = 1; i < lists.length; i++) {
+  // loop through the elements to make a list of dicts to send to the server
+  for (var i = 0; i < lists.length; i++) {
     var list = lists[i];
 
     // if the list is hidden, skip it
@@ -1411,7 +1503,7 @@ function saveLists(saveImmediately = false) {
 
     var input = list.querySelector('input').value.trim();
     var title = input || 'New List';
-    list.querySelector('h4 > div:nth-of-type(1)').innerText = title;
+    list.querySelector('h4 > div:nth-of-type(1) > div:nth-of-type(1)').innerText = title;
     list.classList.remove('editList');
 
     // get all of the ids of the media in the list
@@ -1479,6 +1571,7 @@ function dropdownAddToListMenu() {
   // this function makes the dropdown menu appear for the add to list button on the info page
 
   var dropdownMenu = document.getElementById('addToListDropdown');
+  var container = document.querySelector("#addToListDropdown > div > div");
 
   // don't do anything of the dropdownMenu is already showing
   if (!dropdownMenu.classList.contains('hidden')) {
@@ -1494,13 +1587,23 @@ function dropdownAddToListMenu() {
 
   var resetCreateBtn = function() {
     // hide the create button and clear the input
-    var container = document.querySelector("#addToListDropdown > div > div");
     var mainElm = container.children[container.children.length - 2];
     var input = mainElm.querySelector('input');
     mainElm.classList.add('hidden');
     input.value = "";
     input.blur();
   }
+
+  var scrollFunction = function() {
+    // Check if the scroll position is at the top
+    if (container.scrollTop === 0) {
+      // If at the top, prevent further scrolling up
+      container.scrollTop = 1; // Set it to 1 to prevent further scrolling
+    } else if (container.scrollHeight - container.scrollTop === container.clientHeight) {
+      // If at the bottom, prevent further scrolling down
+      container.scrollTop = container.scrollHeight - container.clientHeight - 1;
+    }
+  };
 
   // add a click event listener for mobile users so that the menu will disappear
   var clickFunction = function(e) {
@@ -1511,6 +1614,8 @@ function dropdownAddToListMenu() {
     // if the user clicks outside the dropdown, hide it and remove the listener
     dropdownMenu.classList.add('hidden');
     document.body.removeEventListener('click', clickFunction);
+    dropdownMenu.removeEventListener('mouseleave', mouseLeaveFunction);
+    container.removeEventListener('scroll', scrollFunction);
 
     // hide the create button and clear the input
     resetCreateBtn();
@@ -1521,6 +1626,7 @@ function dropdownAddToListMenu() {
     dropdownMenu.classList.add('hidden');
     dropdownMenu.removeEventListener('mouseleave', mouseLeaveFunction);
     document.body.removeEventListener('click', clickFunction);
+    container.removeEventListener('scroll', scrollFunction);
 
     // hide the create button and clear the input
     resetCreateBtn();
@@ -1530,6 +1636,9 @@ function dropdownAddToListMenu() {
   setTimeout(function() {
     document.body.addEventListener('click', clickFunction);
     dropdownMenu.addEventListener('mouseleave', mouseLeaveFunction);
+    container.addEventListener('scroll', scrollFunction);
+    // set the scroll position to 1 to make scrolling smooth
+    container.scrollTop = 1;
   }, 0000);
 
 }
@@ -1539,11 +1648,11 @@ function populateAddToListDropdown(lists) {
 
   // if lists is not defined, get the lists from the myListsPage
   if (!lists) {
-    var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer');
+    var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[0].querySelectorAll('.listContainer:not(.hidden)');
     var masterList = [];
 
-    // start at index 1 to skip over the loading lists element
-    for (var i = 1; i < lists.length; i++) {
+    // loop through the elements to make a list of dicts
+    for (var i = 0; i < lists.length; i++) {
       var list = lists[i];
 
       // if the list is hidden, skip it
@@ -1553,7 +1662,7 @@ function populateAddToListDropdown(lists) {
 
       var input = list.querySelector('input').value.trim();
       var title = input || 'New List';
-      list.querySelector('h4 > div:nth-of-type(1)').innerText = title;
+      list.querySelector('h4 > div:nth-of-type(1) > div:nth-of-type(1)').innerText = title;
       list.classList.remove('editList');
 
       // get all of the ids of the media in the list
@@ -1711,8 +1820,8 @@ function createNewListOnInfoPage() {
 
   mainElm.classList.remove('hidden');
 
-  // scroll to the bottom of the container
-  container.scrollTop = container.scrollHeight;
+  // scroll to the bottom of the container minus a pixel
+  container.scrollTop = container.scrollHeight - container.clientHeight - 1;
 
   // focus on the input
   var input = mainElm.querySelector('input');
@@ -1742,6 +1851,12 @@ function removeCreateButtonOnDropdown(decision) {
   input.value = "";
   input.blur();
   populateAddToListDropdown();
+
+  setTimeout(function() {
+    // scroll to the bottom of the container minus a pixel after a millisecond
+    container.scrollTop = container.scrollHeight - container.clientHeight - 1;
+  }, 1);
+
 }
 
 
@@ -2038,6 +2153,45 @@ function loadSearchSuggestions() {
       container.appendChild(main);
     })
     .catch(error => console.error('Error fetching data:', error));
+}
+
+function observeForHidden(targetElement, onHiddenFunction) {
+  // observes for changes to the visibility and if the element becomes hidden, perform the onHiddenFunction
+
+  // Helper function to check if the element is visible (or hidden by any of its parents)
+  function isElementVisible(el) {
+    return !!(el.offsetParent || el.getClientRects().length);
+  }
+
+  // Create a MutationObserver to monitor style and class changes
+  const observer = new MutationObserver(() => {
+    const visible = isElementVisible(targetElement);
+    if (!visible) {
+      // if the element is hidden, perform the function
+      onHiddenFunction();
+      // remove the observer
+      observer.disconnect();
+    }
+  });
+
+  // Function to observe the element and all of its parents
+  function observeVisibility(el) {
+    let currentEl = el;
+
+    while (currentEl) {
+      observer.observe(currentEl, {
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+      currentEl = currentEl.parentElement; // Move up the DOM tree to observe parents
+    }
+  }
+
+  // Start observing the target element and its parents
+  observeVisibility(targetElement);
+
+  // Return a function to disconnect the observer when needed
+  return () => observer.disconnect();
 }
 
 

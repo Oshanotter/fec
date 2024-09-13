@@ -47,7 +47,7 @@ BELOW ARE SOME COMMONLY USED CLASSES
 }
 
 .button:hover {
-  filter: brightness(1.3);
+  filter: brightness(1.3) !important;
   /* brighten the element on hover */
 }
 
@@ -228,7 +228,7 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
   justify-content: center;
   text-align: center;
 
-  img, span {
+  >img, >span {
     /* the main image or loading element */
     border-radius: 15px;
     width: 95%;
@@ -238,7 +238,7 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
     margin-top: calc(150px * 0.025);
   }
 
-  div:nth-of-type(1):not(:empty) {
+  >div:nth-of-type(1):not(:empty) {
     /* only apply these styles if the quality element is not empty */
     background-color: var(--mflixOrange);
     position: absolute;
@@ -251,7 +251,7 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
     padding: 0px 5px;
   }
 
-  div:nth-of-type(2) {
+  >div:nth-of-type(2) {
     /* the title element */
     line-height: 1.2em;
     height: calc(1.2em * 2);
@@ -269,6 +269,53 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
   background: radial-gradient(rgba(255, 255, 255, 0), var(--mflixOrange));
   transform: scale(1.05);
   border: 2px solid var(--mflixWhite);
+}
+
+.posterListButtons {
+  /* the buttons over the top of each poster in the watch lists page */
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: none;
+
+  >div {
+    /* all of the initial div decendants */
+    position: absolute;
+    background-color: var(--mflixOrange);
+    border: 2px solid var(--mflixWhite);
+    border-radius: 999px;
+    box-sizing: border-box;
+    height: 1.5em;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      /* the image inside each button */
+      filter: var(--whiteFilter);
+      height: 100%;
+    }
+  }
+
+  >div:nth-of-type(1) {
+    /* the close button */
+    background-color: var(--mflixGrey);
+    top: -2px;
+    right: -2px;
+  }
+
+  >div:nth-of-type(2) {
+    /* the back button */
+    top: 40%;
+    left: -2px;
+  }
+
+  >div:nth-of-type(3) {
+    /* the forward button */
+    top: 40%;
+    right: -2px;
+  }
 }
 
 /*
@@ -484,13 +531,18 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
           height: 1.25em;
         }
 
-        >div {
+        >div:not(.button) {
           /* the text of the button */
           display: -webkit-box;
           -webkit-box-orient: vertical;
           overflow: hidden;
           text-overflow: ellipsis;
           -webkit-line-clamp: 1;
+        }
+
+        .button {
+          /*specifically for the delete and save buttons */
+          margin: 0 0 0 0.5em;
         }
 
         >input {
@@ -831,38 +883,92 @@ BELOW ARE ELEMENTS RELATING TO THE MY LISTS PAGE
 
     h4 {
       /* the headers for list sections */
-      width: 95%;
+      width: 90%;
+      height: 1.5em;
       border-top: 2px solid var(--mflixOrange);
-      padding-top: 0.5em;
+      padding: 0.5em 5% 0 0;
       margin: 0 0 0 5%;
       display: flex;
       flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
 
-      input {
-        display: none;
+      div {
+        /* all div elements in the h4 tag */
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        height: 100%;
       }
 
-      img {
+      >div:nth-of-type(1) {
+
+        /* the element with the title, input, and trash can */
+        input {
+          display: none;
+        }
+
+        div:nth-of-type(2) {
+          /* the second div with the trash can */
+          /* this filter needs to be here for a glitch that turns icon red */
+          filter: brightness(1);
+          display: none;
+
+          img {
+            filter: var(--orangeFilter);
+            margin-left: 1em;
+            height: 100%;
+          }
+        }
+      }
+
+      >div:nth-of-type(2) {
+        /* the element with the up and down arrows */
         display: none;
-        filter: var(--orangeFilter);
-        margin-left: 1em;
+
+        >div {
+          background-color: var(--mflixOrange);
+          border: 2px solid var(--mflixWhite);
+          border-radius: 999px;
+          aspect-ratio: 1 / 1;
+          box-sizing: border-box;
+          margin-right: 0.5em;
+
+          img {
+            height: 100%;
+            filter: var(--whiteFilter);
+          }
+        }
       }
     }
   }
 
   .editList {
     h4 {
-      div:nth-of-type(1) {
-        display: none;
+      >div:nth-of-type(1) {
+
+        /* the element with the title, input, and trash can */
+        div:nth-of-type(1) {
+          display: none;
+        }
+
+        input {
+          display: block;
+        }
+
+        div:nth-of-type(2) {
+          display: block;
+        }
       }
 
-      input {
-        display: block;
+      >div:nth-of-type(2) {
+        /* the element with the up and down arrows */
+        display: flex;
       }
+    }
 
-      img {
-        display: block;
-      }
+    .posterListButtons {
+      display: block;
     }
   }
 }
