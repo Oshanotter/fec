@@ -95,9 +95,17 @@ BELOW ARE SOME COMMONLY USED CLASSES
   justify-content: center;
   align-items: center;
 
-  img {
-    filter: var(--whiteFilter);
+  div {
+    height: 100%;
     margin-left: 1em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img {
+      filter: var(--whiteFilter);
+      height: 100%;
+    }
   }
 }
 
@@ -286,10 +294,7 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
     border-radius: 999px;
     box-sizing: border-box;
     height: 1.5em;
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 1.5em;
 
     img {
       /* the image inside each button */
@@ -464,7 +469,7 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
     }
   }
 
-  >div:nth-of-type(5) {
+  >div:nth-of-type(7) {
     /* the element that holds the trailer buttons */
     display: flex;
     flex-direction: row;
@@ -564,6 +569,88 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
         /* the create new list button */
         background-color: var(--mflixOrange);
       }
+    }
+  }
+
+  >div::after {
+    /* the cat ear */
+    content: '';
+    position: absolute;
+    width: 1.5em;
+    height: 1.5em;
+    background-color: var(--mflixGrey);
+    transform: rotate(45deg);
+    border: 2px solid var(--mflixWhite);
+    z-index: -1;
+  }
+}
+
+#episodesDropdown {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  >div {
+    /* the main element of the dropdown */
+    position: absolute;
+    background-color: var(--mflixGrey);
+    z-index: 1;
+    border-radius: 5px;
+    border: 2px solid var(--mflixWhite);
+
+    >div:nth-of-type(1) {
+      /* the loading text above the episodes */
+      text-align: center;
+      padding: 0.25em 0em;
+      background-color: inherit;
+    }
+
+    >div:nth-of-type(2) {
+      /* the inner container that holds the seasons and episides container */
+      background-color: inherit;
+      overflow: scroll;
+      border-radius: inherit;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: row;
+
+      >div {
+        /* the seasons and episodes columns */
+        display: flex;
+        flex-direction: column;
+        width: 50%;
+        overflow: scroll;
+        padding: 0.5em;
+
+        >div {
+          /* the actual buttons */
+          padding: 0.3em;
+          margin-bottom: 0.2em;
+          border: 1px solid var(--mflixOrange);
+          border-radius: 10px;
+          background-color: var(--mflixGrey);
+          text-align: center;
+        }
+
+        .active {
+          background-color: var(--mflixOrange);
+        }
+      }
+
+      >div:nth-of-type(1) {
+        /* the seasons column */
+        border-right: 1px solid var(--mflixWhite);
+      }
+    }
+
+    >div:nth-of-type(3) {
+      /* the bottom element that allows to deselect the episode */
+      text-align: center;
+      font-size: 0.75em;
+      color: var(--mflixOrange);
+      text-decoration: underline;
     }
   }
 
@@ -971,9 +1058,15 @@ BELOW ARE ELEMENTS RELATING TO THE MY LISTS PAGE
       display: block;
     }
   }
+
+  .editHistory {
+    .posterListButtons {
+      display: block;
+    }
+  }
 }
 
-#listEditContainer {
+#listEditContainer, #historyEditContainer {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -1092,7 +1185,7 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
     max-height: 100%;
   }
 
-  #addToListDropdown {
+  #addToListDropdown, #episodesDropdown {
     top: -1em;
 
     >div {
@@ -1191,7 +1284,7 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
     background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
   }
 
-  #addToListDropdown {
+  #addToListDropdown, #episodesDropdown {
     top: -1.75em;
 
     >div {

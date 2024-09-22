@@ -50,6 +50,9 @@ function main() {
   // adjust the page to reflect the current settings
   executeSettings();
 
+  // load the page from the hash in the window's url
+  loadPageFromUrlHash();
+
 }
 
 
@@ -152,11 +155,15 @@ function alertMessage(message) {
 
   var img = document.createElement('img');
   img.src = "icons/general/close.svg";
-  img.classList.add('button');
-  img.onclick = function() {
+
+  var imgContainer = document.createElement('div');
+  imgContainer.classList.add('button');
+  imgContainer.onclick = function() {
     div.remove();
   }
-  div.appendChild(img);
+  imgContainer.appendChild(img);
+
+  div.appendChild(imgContainer);
 
   document.body.appendChild(div);
 
@@ -179,7 +186,6 @@ function moveElement(element, steps) {
       const previousSibling = sibling.previousElementSibling;
       if (previousSibling) {
         parent.insertBefore(sibling, previousSibling);
-        sibling = previousSibling;
       } else {
         // reached the top, stop moving
         break;
@@ -193,7 +199,6 @@ function moveElement(element, steps) {
       const nextSibling = sibling.nextElementSibling;
       if (nextSibling) {
         parent.insertBefore(nextSibling, sibling);
-        sibling = nextSibling;
       } else {
         // reached the bottom, stop moving
         break;
@@ -201,6 +206,46 @@ function moveElement(element, steps) {
     }
   }
 
+}
+
+function resumeAvalible() {
+  // checks to see if resuming the media is possible and returns true or false
+  return false;
+}
+
+function loadPageFromUrlHash() {
+  // loadds the specific page on load based on what the page's hash is
+
+  var id = window.location.hash.substring(1); // remove the first character, which is the hash symbol
+
+  if (id) {
+    if (id == 'page-history') {
+      displayPage('myListsPage');
+      showList('history');
+
+    } else if (id.includes('page-')) {
+      var page = id.substring(5); // remove the first 5 characters, which are 'page-'
+      displayPage(page);
+
+    } else if (id.includes('watch-')) {
+      var parts = id.split('-');
+      var mediaType = parts[1];
+      var tmdbId = parts[2];
+      displayInfoPage(tmdbId, mediaType);
+
+    } else if (id.includes('search-')) {
+      var searchString = id.substring(7); // remove the first 7 characters, which are 'search-'
+      var query = decodeURIComponent(searchString);
+
+      displayPage('searchPage');
+
+      searchMoviesAndTvShows(query).then(response => {
+        document.getElementById('searchInput').value = query;
+        displaySearchResults(response);
+      });
+
+    }
+  }
 }
 
 
@@ -269,10 +314,9 @@ function login(username, passwordHash) {
 
   // contact the google apps script to validate login information
   var url = appsScriptBaseUrl + "?exec=login&username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(passwordHash);
-  console.log(url);
+
   fetch(url)
     .then((response) => {
-      //console.log(response.status);
       return response.json();
     })
     .then((response) => {
@@ -299,6 +343,9 @@ function logout() {
   // reset the local storage by passing no arguments to setLocalStorage()
   setLocalStorage();
 
+  // update the page hash
+  window.location.hash = '';
+
   // reload the page
   var homePage = document.location.origin + document.location.pathname;
   document.location.href = homePage;
@@ -309,6 +356,9 @@ function logout() {
 // functions for showing, hiding, and loading main page content
 function displayPage(pageID) {
   // displays the page based off the pageID and hides the others
+
+  // update the page hash
+  window.location.hash = "page-" + pageID;
 
   // load the content for that page
   loadPageContent(pageID);
@@ -347,7 +397,6 @@ function loadPageContent(category) {
     // first check to see if new page content needs to be loaded
     var container = document.getElementById(category).querySelector('.container');
     if (container.dataset.loaded == "true") {
-      console.log('already loaded');
       return; // don't load the content again
     }
 
@@ -406,7 +455,6 @@ function getLatestMedia(pageNum = 1, category) {
   fetch(url)
     .then(response => response.json())
     .then(data => {
-      console.log(data)
       idList = [];
       for (var i = 0; i < data.result.length; i++) {
         idList[i] = data.result[i].tmdb_id;
@@ -482,7 +530,6 @@ function makePosterDiv(id, title = "undefined title", quality = "", imgURL, medi
 
 
   mainElm.onclick = function() {
-    console.log(id);
     displayInfoPage(id, mediaType, title);
   };
 
@@ -557,7 +604,7 @@ function removeLoadingPosters(mediaPageID) {
 
 
 // functions that display or get info for the infoPage
-function displayInfoPage(mediaId, mediaType, optionalTitle) {
+async function displayInfoPage(mediaId, mediaType, optionalTitle) {
   // display the info page with the results about the movie or tv show
 
   // load a video right away so that the player on mobile doesn't error on first attempt
@@ -622,9 +669,6 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
         var trailerBtn2 = document.getElementById('restartTrailer');
         if (trailerID != null) {
 
-          // load the video right away, but don't play it yet
-          trailerPlayer.cueVideoById(trailerID);
-
           // make sure that the trailer buttons are visible
           trailerBtn1.classList.remove('hidden');
           trailerBtn2.classList.remove('hidden');
@@ -637,6 +681,14 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
 
           // only autoplay the trailer if the setting is set to do so
           if (getSetting('autoStartTrailer')) {
+
+            try {
+              // load the video right away, but don't play it yet
+              trailerPlayer.cueVideoById(trailerID);
+            } catch {
+              console.error('trailerPlayer is not yet defined, trailer autostart will not commence')
+              return;
+            }
 
             // autostart the trailer after 5 seconds
             trailerPlayerTimeout = setTimeout(function() {
@@ -655,8 +707,24 @@ function displayInfoPage(mediaId, mediaType, optionalTitle) {
 
       preLoadMedia(mediaId, mediaType);
 
+      // check to see if resuming the media is avalible
+      if (resumeAvalible() && mediaType == 'movie') {
+        document.getElementById('resumeButton').classList.remove('hidden');
+      } else if (mediaType == 'tv') {
+        document.getElementById('episodesButton').classList.remove('hidden');
+        populateEpisodesDropdown(media.seasons, media.last_episode_to_air);
+        // select the correct season and episode
+        if (getSetting('saveWatchHistory') && mediaType == 'tv') {
+          selectLastEpisode(mediaId);
+        }
+      }
+
     })
-    .catch(error => console.log('Error fetching movie info:', error));
+    .catch(error => console.error(error));
+
+  // update the page's hash
+  window.location.hash = "watch-" + mediaType + "-" + mediaId;
+
 }
 
 function displayReleaseDate(inputDate) {
@@ -710,22 +778,16 @@ function displayCertification(movieId, mediaType) {
         // Find the US certification
         const usRelease = releaseData.results.find(country => country.iso_3166_1 === 'US');
         if (usRelease) {
-          console.log('found rating')
-          console.log(usRelease);
           var usCertification = usRelease.rating || usRelease.release_dates[0].certification;
-          console.log(usCertification)
           if (usCertification == "") {
             var usCertification = "NR";
           }
           certificationElem.innerText = usCertification;
-          console.log('US Rating:', usCertification);
         } else {
-          certificationElem.innerText = "NR";
-          console.log('US Rating not found');
+          certificationElem.innerText = "NR"; // default rating if the rating is not found
         }
       } catch {
-        certificationElem.innerText = "NR";
-        console.log('US Rating not found');
+        certificationElem.innerText = "NR"; // default rating if the rating is not found
       }
     });
 }
@@ -762,13 +824,11 @@ function adjustOverviewHeight() {
 
   // check if the device is in landscape mode
   if (window.matchMedia("(orientation: landscape)").matches) {
-    //console.log('in landscape');
     // it is in landscape mode, so set the max height to the scroll height of the flex content
     var flexContent = document.getElementById('descriptionContent');
     flexElement.style.maxHeight = flexContent.scrollHeight + 'px';
   } else {
-    //console.log('in portrait');
-    // it is not in landscape mode, so set the max heoght of the flex element to 100%
+    // it is not in portrait mode, so set the max heoght of the flex element to 100%
     flexElement.style.maxHeight = "100%";
   }
 }
@@ -812,8 +872,13 @@ async function getMediaTrailer(mediaId, mediaType) {
 function resetInfoPage() {
   // reset the info page when going back to the main page
 
-  // stop the trailer by loading an invalid video
-  trailerPlayer.stopVideo();
+  // stop the trailer
+  try {
+    trailerPlayer.stopVideo();
+  } catch (e) {
+    console.error(e);
+  }
+
   // set the movie info back to normal
   var infoPage = document.getElementById('infoPage');
   infoPage.classList.add('hidden');
@@ -824,11 +889,35 @@ function resetInfoPage() {
   infoCluster.innerHTML = '<table><tbody><tr><td>Sep 20, 1987</td><td>10 / 10</td></tr><tr><td>PG-13</td><td>1h 48m</td></tr></tbody></table>';
   var overviewElem = infoSplit1.children[2].children[0];
   overviewElem.innerText = "";
+  document.getElementById('resumeButton').classList.add('hidden');
+  document.getElementById('episodesButton').classList.add('hidden');
+  var loadingLastEpisodeDiv = document.querySelector("#episodesDropdown > div > div:nth-child(1)");
+  loadingLastEpisodeDiv.classList.add('loadingWave');
+  loadingLastEpisodeDiv.innerText = "Loading Last Watched Episode...";
+  var playBtn = document.getElementById('playButton');
+  playBtn.querySelector('div').innerText = "Play";
+
   // display the overlay over the trailer again
   var playerElement = document.getElementById('ytTrailerPlayer');
   playerElement.style.display = 'none';
-  // stop the trailer feom playing if the timeout has not happened yet
+
+  // reset the dataset of the infopage
+  infoPage.removeAttribute('data-id');
+  infoPage.removeAttribute('data-media-type');
+  infoPage.removeAttribute('data-position');
+
+  // stop the trailer from playing if the timeout has not happened yet
   clearTimeout(trailerPlayerTimeout);
+
+  // find which page is showing and update the page's hash
+  var mainPages = document.querySelectorAll('.main');
+  for (var i = 0; i < mainPages.length; i++) {
+    var main = mainPages[i];
+    if (!main.classList.contains('hidden')) {
+      break;
+    }
+  }
+  window.location.hash = "page-" + main.id;
 }
 
 
@@ -952,8 +1041,12 @@ function restartTrailer() {
 
 
 // functions for getting the source url for the media
-async function preLoadMedia(tmdbID, mediaType) {
+async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
   // try to get the original source from vidsrc, otherwise use the regular embed url
+
+  var playBtn = document.getElementById('playButton');
+  playBtn.onclick = "";
+
 
   try {
     // get the vidsrc id from tmdb id
@@ -973,13 +1066,42 @@ async function preLoadMedia(tmdbID, mediaType) {
   } catch {
     // when getting the direct source fails
     var sourceURL = currentSource + "embed/" + mediaType + "/" + tmdbID;
+    if (seasonNum && episodeNum) {
+      var sourceURL = sourceURL + "?season=" + seasonNum + "&episode=" + episodeNum;
+    }
   }
 
+
   // add the onclick function to play the movie
-  var playBtn = document.getElementById('playButton');
-  playBtn.onclick = function() {
+  playBtn.onclick = async function() {
+    // play the movie by loading the sourceURL into the iframe
     playMovie(sourceURL);
+
+    if (getSetting('saveWatchHistory')) {
+
+      await getPlaybackPosition(tmdbID, mediaType);
+      if (mediaType == 'tv') {
+        if (seasonNum && episodeNum) {
+          var position = "s" + seasonNum + "e" + episodeNum;
+        } else {
+          var position = "s0e0";
+        }
+
+      } else if (mediaType == 'movie') {
+        var position = seasonNum || 0;
+      }
+
+
+      addToHistory(tmdbID, mediaType, position, true);
+    }
+
   };
+
+  if (mediaType == 'tv' && seasonNum && episodeNum) {
+    playBtn.querySelector('div').innerText = "Play S" + seasonNum + " E" + episodeNum;
+  } else {
+    playBtn.querySelector('div').innerText = "Play";
+  }
 }
 
 async function getVidsrcId(tmdbID) {
@@ -1095,7 +1217,11 @@ function playMovie(sourceURL) {
 
   // stop the trailer and show the poster again, also clear the timeout for the trailer
   clearTimeout(trailerPlayerTimeout);
-  trailerPlayer.stopVideo();
+  try {
+    trailerPlayer.stopVideo();
+  } catch (e) {
+    console.error(e);
+  }
   var playerElement = document.getElementById('ytTrailerPlayer');
   playerElement.style.display = 'none';
 
@@ -1105,10 +1231,25 @@ function playMovie(sourceURL) {
 
   // display the iframe's parent element
   iframe.parentNode.classList.remove('hidden');
+
+  // set the title of the page to the media that is playing
+  var documentTitle = document.querySelector("head > title");
+  var mediaTitle = document.querySelector("#infoSplit1 > h1").innerText;
+  if (sourceURL.includes('season')) {
+    var urlObj = new URL(sourceURL); // Create a URL object
+    var urlParams = new URLSearchParams(urlObj.search);
+    var seasonNum = urlParams.get('season');
+    var episodeNum = urlParams.get('episode');
+    var mediaTitle = mediaTitle + " - S" + seasonNum + " E" + episodeNum;
+  }
+  documentTitle.innerText = mediaTitle;
 }
 
 function stopMovie() {
   // stops playing the movie or tv show in the iframe
+
+  // set the title of the site back to normal
+  document.querySelector("head > title").innerText = "Mflix";
 
   // stop the media by setting the iframe source to nothing
   var iframe = document.getElementById('movieIframe');
@@ -1224,6 +1365,11 @@ function displaySearchResults(dict) {
     var poster = makePosterDiv(item.id, title, qualityDiv, item.poster_path, item.media_type);
     container.appendChild(poster);
   });
+
+  // update the page hash
+  var query = document.getElementById('searchInput').value;
+  var encodedQuery = encodeURIComponent(query)
+  window.location.hash = 'search-' + encodedQuery;
 }
 
 
@@ -1249,7 +1395,6 @@ function getWatchLists() {
 
   fetch(url)
     .then((response) => {
-      //console.log(response.status);
       return response.json();
     })
     .then((response) => {
@@ -1273,8 +1418,10 @@ function getWatchLists() {
 
       // after all the lists are done loading, remove the loading list and show the list edit container
       loadingList.parentNode.remove();
-      var listEditContainer = document.getElementById('listEditContainer');
-      listEditContainer.classList.remove('hidden');
+      var listsPage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
+      if (!listsPage.classList.contains('hidden')) {
+        document.getElementById('listEditContainer').classList.remove('hidden');
+      }
       container.dataset.loading = "false";
 
     })
@@ -1290,19 +1437,35 @@ function showList(list) {
   // show either the watch lists tab or the history tab
 
   if (list == "history") {
-    alert('history coming soon...');
-    return;
-    var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)");
-    var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)")
-    var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
-    var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
-    document.getElementById('listEditContainer').classList.add('hidden');
+    // update the page hash
+    window.location.hash = 'page-history';
+
+    if (getSetting('saveWatchHistory')) {
+      var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)");
+      var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)")
+      var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
+      var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
+      if (inactivePage.dataset.loading == "false") {
+        document.getElementById('historyEditContainer').classList.remove('hidden');
+      }
+      document.getElementById('listEditContainer').classList.add('hidden');
+      getHistory();
+    } else {
+      alertMessage('History is disabled in settings');
+    }
+
   } else {
+    // update the page hash
+    window.location.hash = 'page-myListsPage';
+
     var activeButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(2)");
     var inactiveButton = document.querySelector("#myListsPage > div:nth-of-type(1) > div:nth-of-type(1)")
     var activePage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
     var inactivePage = document.querySelector("#myListsPage").getElementsByClassName('container')[0];
-    document.getElementById('listEditContainer').classList.remove('hidden');
+    if (inactivePage.dataset.loading == "false") {
+      document.getElementById('listEditContainer').classList.remove('hidden');
+    }
+    document.getElementById('historyEditContainer').classList.add('hidden');
   }
 
   activeButton.classList.remove('active');
@@ -1480,7 +1643,6 @@ function saveLists(saveImmediately = false) {
   // if the container content is loading, don't do anything
   var container = document.querySelector('#myListsPage').getElementsByClassName('container')[0];
   if (container.dataset.loading == "true" && saveImmediately == false) {
-    console.log('already saving')
     return;
   }
 
@@ -1532,7 +1694,6 @@ function saveLists(saveImmediately = false) {
 
   fetch(url)
     .then((response) => {
-      //console.log(response.status);
       return response.json();
     })
     .then((response) => {
@@ -1573,7 +1734,7 @@ function dropdownAddToListMenu() {
   var dropdownMenu = document.getElementById('addToListDropdown');
   var container = document.querySelector("#addToListDropdown > div > div");
 
-  // don't do anything of the dropdownMenu is already showing
+  // don't do anything if the dropdownMenu is already showing
   if (!dropdownMenu.classList.contains('hidden')) {
     return;
   }
@@ -1861,12 +2022,534 @@ function removeCreateButtonOnDropdown(decision) {
 
 
 
+// functions that deal with the user's watch history and tv episodes
+async function getHistory() {
+  // gets the user's history and appends it to the history page
+
+  // if the container is still loading or has already loaded, do nothing
+  var container = document.getElementById('myListsPage').getElementsByClassName('container')[1];
+  var loadingPoster = container.querySelector('.loadingWave');
+  if (container.dataset.loading == "true" || loadingPoster == null) {
+    return;
+  }
+  container.dataset.loading = "true";
+
+  var url = appsScriptBaseUrl + "?exec=getHistory&username=" + encodeURIComponent(getLocalStorage('username')) + "&password=" + encodeURIComponent(getLocalStorage('password'));
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+
+    var history = data['history'];
+    if (!history) {
+      alertMessage(data['error']);
+      return;
+    }
+
+    var keys = Object.keys(history);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      var list = history[key];
+      var mediaType = key;
+      if (mediaType == "tv") {
+        var horizontalScroll = document.getElementById('tvShowsHistory');
+      } else {
+        var horizontalScroll = document.getElementById('moviesHistory');
+      }
+
+      // create an array of promises for all addToHistory calls
+      let promises = list.map(dict => {
+        var id = Object.keys(dict)[0];
+        var position = Object.values(dict)[0];
+        return addToHistory(id, mediaType, position); // Return the promise
+      });
+
+      // run all promises in parallel
+      await Promise.all(promises);
+
+      if (list.length == 0) {
+        horizontalScroll.innerHTML = '<div>Watch media to see it in your history...</div>';
+      }
+
+      // after all the lists are done loading, remove the loading posters
+      removeLoadingPosters(horizontalScroll);
+
+      container.dataset.loading = "false";
+      var historyPage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
+      if (!historyPage.classList.contains('hidden')) {
+        document.getElementById('historyEditContainer').classList.remove('hidden');
+      }
+
+
+    }
+
+  } catch (e) {
+
+    alertMessage(error);
+    console.error(error);
+  };
+}
+
+async function addToHistory(id, mediaType, position, save = false) {
+  // takes the id and mediaType as input and adds it to the user's history
+
+  if (mediaType == "tv") {
+    var container = document.getElementById('tvShowsHistory');
+  } else {
+    var container = document.getElementById('moviesHistory');
+  }
+
+  // first check to see if the item is already in the history
+  var poster = container.querySelector('[data-id="' + id + '"]');
+  if (poster) {
+    // it already exists, so move it to the begenning of the history
+    moveElement(poster, 30);
+    poster.dataset.position = position;
+    if (save == true) {
+      saveHistory();
+    }
+    return;
+  }
+
+  // fetch the info for the movie
+  var url = 'https://api.themoviedb.org/3/' + mediaType + '/' + id + '?api_key=' + apiKey;
+
+  try {
+    const response = await fetch(url);
+    const media = await response.json();
+
+
+    var title = media.title || media.name;
+    var imgURL = media.poster_path;
+
+    // make the poster with the info, plus add an overlay that will move the media in the list
+    var poster = makePosterDiv(id, title, "", imgURL, mediaType);
+    poster.dataset.position = position;
+    let buttonsOverlay = document.createElement('div');
+    buttonsOverlay.classList.add('posterListButtons');
+    buttonsOverlay.innerHTML = '<div class="button"><img src="icons/general/close.svg" alt="close"></div>';
+    buttonsOverlay.querySelector('div:nth-of-type(1)').onclick = function() {
+      if (poster.parentNode.children.length == 1) {
+        poster.parentNode.innerHTML = '<div>Watch media to see it in your history...</div>';
+      } else {
+        poster.remove();
+      }
+      event.stopPropagation();
+    }
+    buttonsOverlay.onclick = function() {
+      event.stopPropagation();
+    }
+    poster.appendChild(buttonsOverlay);
+
+    // clear the previous element in the list, which is the placeholder text element
+    var allPosters = container.querySelectorAll('.posterContainer');
+    if (allPosters.length == 0) {
+      container.innerHTML = '';
+      container.appendChild(poster);
+    } else {
+
+      container.insertBefore(poster, container.children[0]);
+
+      var allPosters = container.querySelectorAll('.posterContainer');
+      // loop through the children and remove any that are greater than 30 children
+      for (var i = 0; i < allPosters.length; i++) {
+        if (i >= 30) {
+          var poster = allPosters[i];
+          poster.remove();
+        }
+      }
+
+    }
+
+    // if the save parameter is true, save the history to the server
+    if (save == true) {
+      saveHistory();
+    }
+
+  } catch (e) {
+    console.error('Error fetching movie details:', error);
+  };
+
+}
+
+function saveHistory() {
+  // saves the current history by sending it to the server
+
+  // if the history is already being saved, do nothing
+  var saveBtnImg = document.getElementById('historyEditContainer').children[1].querySelector('img');
+  if (saveBtnImg.src.includes('icons/general/loading_wheel.gif')) {
+    return;
+  }
+  saveBtnImg.src = "icons/general/loading_wheel.gif";
+
+  // remove the ability to remove items from the history
+  var historyLists = document.querySelector('#myListsPage').getElementsByClassName('container')[1].querySelectorAll('.listContainer');
+  for (var i = 0; i < historyLists.length; i++) {
+    historyLists[i].classList.remove('editHistory');
+  }
+
+  var masterDict = {};
+
+  var idList = ['moviesHistory', 'tvShowsHistory'];
+
+  for (var i = 0; i < idList.length; i++) {
+    var container = document.getElementById(idList[i]);
+    var history = container.querySelectorAll('.posterContainer');
+    var list = [];
+
+    for (var j = 0; j < history.length; j++) {
+      var media = history[j];
+      var id = media.dataset.id;
+      var position = media.dataset.position;
+      var dict = {};
+      dict[id] = position;
+      list.unshift(dict); // add to the begenning of the list
+    }
+
+    if (idList[i] == 'moviesHistory') {
+      masterDict['movie'] = list;
+    } else {
+      masterDict['tv'] = list;
+    }
+
+  }
+
+  // send the masterDict to the server
+  var masterDictString = JSON.stringify(masterDict);
+  var url = appsScriptBaseUrl + "?exec=updateHistory&username=" + encodeURIComponent(getLocalStorage('username')) + "&password=" + encodeURIComponent(getLocalStorage('password')) + "&newHistory=" + encodeURIComponent(masterDictString);
+
+  fetch(url)
+    .then((response) => {
+      return response.json();
+    })
+    .then((response) => {
+
+      var success = response['success'];
+      if (!success) {
+        alertMessage(response['error']);
+        return;
+      }
+
+      // change the save history buttons back to normal
+      var editBtn = document.getElementById('historyEditContainer').children[0];
+      var saveBtn = document.getElementById('historyEditContainer').children[1];
+      editBtn.classList.remove('hidden');
+      saveBtn.classList.add('hidden');
+      saveBtnImg.src = "icons/general/save.svg";
+
+    })
+    .catch(error => {
+      alertMessage(error);
+    });
+}
+
+function editHistory() {
+  // allows the user to remove items from their history
+
+  // change the edit history button to the save lists button
+  var editBtn = document.getElementById('historyEditContainer').children[0];
+  var saveBtn = document.getElementById('historyEditContainer').children[1];
+  editBtn.classList.add('hidden');
+  saveBtn.classList.remove('hidden');
+
+  var lists = document.querySelector('#myListsPage').getElementsByClassName('container')[1].querySelectorAll('.listContainer');
+
+  // loop through the elements
+  for (var i = 0; i < lists.length; i++) {
+    var list = lists[i];
+    list.classList.add('editHistory');
+  }
+
+  // observe for when the myListsPage is hidden, then save the unsaved lists
+  var targetElement = document.querySelectorAll('#myListsPage > .container')[1];
+  observeForHidden(targetElement, function() {
+    var unsavedList = targetElement.querySelectorAll('.editHistory');
+    if (unsavedList.length > 0) {
+      saveHistory();
+    }
+  });
+}
+
+async function getPlaybackPosition(id, mediaType) {
+  // gets the playback position of the media from the history
+
+  // if the history is not loading and has not already loaded, get the history
+  var historyContainer = document.getElementById('myListsPage').getElementsByClassName('container')[1];
+  var loadingPoster = historyContainer.querySelector('.loadingWave');
+  if (historyContainer.dataset.loading != "true" && loadingPoster != null) {
+
+    await getHistory();
+    return await getPlaybackPosition(id, mediaType);
+
+  } else if (historyContainer.dataset.loading == "true") {
+    // if the history is still loading, try again in 1 second
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+    return await getPlaybackPosition(id, mediaType);
+
+  } else {
+    // otherwise, get the position from the media and return it
+
+    if (mediaType == "tv") {
+      var container = document.getElementById('tvShowsHistory');
+      var defaultReturn = "s0e0";
+    } else {
+      var container = document.getElementById('moviesHistory');
+      var defaultReturn = 0;
+    }
+
+    var media = container.querySelector('[data-id="' + id + '"]');
+    if (!media) {
+      return defaultReturn;
+    } else {
+      if (mediaType == "tv") {
+        return media.dataset.position;
+      } else {
+        return Number(media.dataset.position);
+      }
+    }
+
+  }
+}
+
+function dropdownEpisodeSelector() {
+  // shows the episodes selector on the infoPage
+
+  var dropdownMenu = document.getElementById('episodesDropdown');
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
+
+  // don't do anything if the dropdownMenu is already showing
+  if (!dropdownMenu.classList.contains('hidden')) {
+    return;
+  }
+  dropdownMenu.classList.remove('hidden');
+
+  // select the correct season and episode
+  var infoPage = document.getElementById('infoPage');
+  selectLastEpisode(infoPage.dataset.id);
+
+
+  var scrollFunction = function(event) {
+    var element = event.currentTarget;
+    // Check if the scroll position is at the top
+    if (element.scrollTop === 0) {
+      // If at the top, prevent further scrolling up
+      element.scrollTop = 1; // Set it to 1 to prevent further scrolling
+    } else if (element.scrollHeight - element.scrollTop === element.clientHeight) {
+      // If at the bottom, prevent further scrolling down
+      element.scrollTop = element.scrollHeight - element.clientHeight - 1;
+    }
+  };
+
+  // add a click event listener for mobile users so that the menu will disappear
+  var clickFunction = function(e) {
+    // don't do anything if the user clicks inside of the dropdown menu
+    if (dropdownMenu.contains(e.srcElement)) {
+      return;
+    }
+    // if the user clicks outside the dropdown, hide it and remove the listener
+    dropdownMenu.classList.add('hidden');
+    document.body.removeEventListener('click', clickFunction);
+    dropdownMenu.removeEventListener('mouseleave', mouseLeaveFunction);
+    seasonsContainer.removeEventListener('scroll', scrollFunction);
+    episodesContainer.removeEventListener('scroll', scrollFunction);
+  }
+
+  var mouseLeaveFunction = function() {
+    // hide the dropdown
+    dropdownMenu.classList.add('hidden');
+    dropdownMenu.removeEventListener('mouseleave', mouseLeaveFunction);
+    document.body.removeEventListener('click', clickFunction);
+    seasonsContainer.removeEventListener('scroll', scrollFunction);
+    episodesContainer.removeEventListener('scroll', scrollFunction);
+  }
+
+  // add the click event listener with a set timeout function, otherwise it will regester the current click as well
+  setTimeout(function() {
+    document.body.addEventListener('click', clickFunction);
+    dropdownMenu.addEventListener('mouseleave', mouseLeaveFunction);
+    seasonsContainer.addEventListener('scroll', scrollFunction);
+    episodesContainer.addEventListener('scroll', scrollFunction);
+    // set the scroll position to 1 to make scrolling smooth
+    seasonsContainer.scrollTop = 1;
+    episodesContainer.scrollTop = 1;
+  }, 0000);
+
+  // show or hide the Deselect Episode button
+  if (getSetting('showDeselectEpisode')) {
+    document.getElementById('showDeselectEpisode').classList.remove('hidden');
+  } else {
+    document.getElementById('showDeselectEpisode').classList.add('hidden');
+  }
+}
+
+function populateEpisodesDropdown(list, lastEpisodeDict) {
+  // populates the dropdown menu for the episodes selector on the infoPage
+
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  seasonsContainer.innerHTML = '';
+  var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
+  episodesContainer.innerHTML = '';
+
+  // loop to create each season that is avalible
+  for (var i = 0; i < list.length; i++) {
+    let dict = list[i];
+
+    let seasonNumber = dict.season_number;
+    let lastAiredSeason = lastEpisodeDict.season_number;
+    if (seasonNumber == 0 || seasonNumber > lastAiredSeason) {
+      continue; // skip the season if it is a special or if it hasn't aired yet
+    }
+
+    let numEpisodes = dict.episode_count;
+
+    // create the button for each season
+    let element = document.createElement('div');
+    element.innerText = "Season " + seasonNumber;
+    element.classList.add('button');
+    // set the season as active if it is the first season
+    if (seasonNumber == 1) {
+      element.classList.add('active');
+    }
+    element.dataset.ep = 0; // set the currently selected episode to 0
+
+    element.onclick = function() {
+
+      episodesContainer.innerHTML = '';
+
+      // if the active season exists in the seasons container, remove it's active class
+      if (seasonsContainer.querySelector('.active')) {
+        seasonsContainer.querySelector('.active').classList.remove('active');
+      }
+      element.classList.add('active'); // add the active class to the selected season
+
+      // loop to create each episode
+      for (let j = 1; j <= numEpisodes; j++) {
+
+        let lastAiredEpisode = lastEpisodeDict.episode_number;
+        if (j > lastAiredEpisode && seasonNumber == lastAiredSeason) {
+          continue; // skip the episode if it hasn't aired yet
+        }
+
+        // create a button for each episode
+        let subElement = document.createElement('div');
+        subElement.innerText = "Episode " + j;
+        subElement.classList.add('button');
+
+        // if the episode number is the same as the active episode in the season button, set it as active
+        if (j == element.dataset.ep) {
+          subElement.classList.add('active');
+        }
+
+        subElement.onclick = function() {
+          // if the active episode exists in the episodes container, remove it's active class
+          if (episodesContainer.querySelector('.active')) {
+            episodesContainer.querySelector('.active').classList.remove('active');
+          }
+          subElement.classList.add('active'); // add the active class to the selected episode
+
+          // remove the currently selected episode fom the season button
+          let children = Array.from(seasonsContainer.children);
+          children.forEach(function(item) {
+            item.dataset.ep = 0;
+          });
+          element.dataset.ep = j; // set the new selected episode
+
+          // set the play button to play the correct episode
+          var id = document.getElementById('infoPage').dataset.id;
+          preLoadMedia(id, 'tv', seasonNumber, j);
+        };
+        // append the episode button to the episodes container and scroll to the top
+        episodesContainer.appendChild(subElement);
+        episodesContainer.scrollTop = 1;
+      }
+
+    }
+
+    seasonsContainer.appendChild(element);
+  }
+}
+
+function selectLastEpisode(id) {
+  // selects the correct season and episode in the dropdown
+
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
+
+  if (getSetting('saveWatchHistory')) {
+
+    getPlaybackPosition(id, 'tv').then(position => {
+
+      var season = Number(position.match(/s(\d+)/i)[1]);
+      var episode = Number(position.match(/e(\d+)/i)[1]);
+
+      // only click on the previously watched episode if the user hasn't changed the episode already
+      if (seasonsContainer.children[0].classList.contains('active') && episodesContainer.children.length == 0) {
+        try {
+          // try to click on the last watched episode
+          seasonsContainer.children[season - 1].click();
+          episodesContainer.children[episode - 1].click();
+        } catch {
+          // if it doesn't work, click on the first season and episode
+          try {
+            seasonsContainer.children[0].click();
+            episodesContainer.children[0].click();
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+
+      var loadingLastEpisodeDiv = document.querySelector("#episodesDropdown > div > div:nth-child(1)");
+      loadingLastEpisodeDiv.classList.remove('loadingWave');
+      loadingLastEpisodeDiv.innerText = "Last Watched: S" + season + " E" + episode;
+
+    })
+
+  } else {
+    var loadingLastWatchedEpisodeDiv = document.querySelector("#episodesDropdown > div > div:nth-child(1)");
+    loadingLastWatchedEpisodeDiv.innerText = "";
+    loadingLastWatchedEpisodeDiv.classList.remove('loadingWave');
+    // click on the ffirst season and episode
+    try {
+      seasonsContainer.children[0].click();
+      episodesContainer.children[0].click();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+function deselectEpisode() {
+  // deselects the episode
+
+  var id = document.getElementById('infoPage').dataset.id;
+  preLoadMedia(id, 'tv');
+
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
+
+  seasonsContainer.querySelector('.active').classList.remove('active');
+  episodesContainer.innerText = '';
+
+  // remove the currently selected episode fom the season button
+  var children = Array.from(seasonsContainer.children);
+  children.forEach(function(item) {
+    item.dataset.ep = 0;
+  });
+}
+
+
+
 // functions for adjusting settings
 function getSetting(setting) {
   // gets the specified setting from the local storage
 
   var defaultValues = {
     autoStartTrailer: true,
+    saveWatchHistory: true,
+    showDeselectEpisode: false,
     zoom: 100
   }
 
@@ -1888,7 +2571,7 @@ function setSetting(setting, value) {
 }
 
 function executeSettings() {
-  // adjusts the page to reflect the current settings
+  // adjusts the settings page to reflect the current settings
 
   // adjust zoom settings
   var newZoom = getSetting('zoom')
@@ -1899,6 +2582,30 @@ function executeSettings() {
   var btn1 = container.querySelector('input:nth-of-type(1)');
   var btn2 = container.querySelector('input:nth-of-type(2)');
   if (getSetting('autoStartTrailer')) {
+    btn2.removeAttribute('checked');
+    btn1.setAttribute('checked', true);
+  } else {
+    btn1.removeAttribute('checked');
+    btn2.setAttribute('checked', true);
+  }
+
+  // adjust saveWatchHistory buttons
+  var container = document.getElementById('saveWatchHistoryContainer');
+  var btn1 = container.querySelector('input:nth-of-type(1)');
+  var btn2 = container.querySelector('input:nth-of-type(2)');
+  if (getSetting('saveWatchHistory')) {
+    btn2.removeAttribute('checked');
+    btn1.setAttribute('checked', true);
+  } else {
+    btn1.removeAttribute('checked');
+    btn2.setAttribute('checked', true);
+  }
+
+  // adjust showDeselectEpisode buttons
+  var container = document.getElementById('showDeselectEpisodeContainer');
+  var btn1 = container.querySelector('input:nth-of-type(1)');
+  var btn2 = container.querySelector('input:nth-of-type(2)');
+  if (getSetting('showDeselectEpisode')) {
     btn2.removeAttribute('checked');
     btn1.setAttribute('checked', true);
   } else {
@@ -1961,16 +2668,8 @@ function addScrollListeners() {
         var scrollPosition = element.scrollTop + element.clientHeight;
         var scrollHeight = element.scrollHeight - 1;
 
-        // Log the values
-        /*console.log('scrollTop:', element.scrollTop);
-        console.log('clientHeight:', element.clientHeight);
-        console.log('scrollHeight:', element.scrollHeight);*/
-
         // Check if the user has scrolled to the bottom
         if (scrollPosition >= scrollHeight) {
-          console.log('You have scrolled to the bottom!');
-          //loadMoreMedia();
-          console.log(pages[i])
           var container = element.querySelector('.container');
           if (container.dataset.loading == 'true') {
             // if the previous media is still loading, do nothing
@@ -2082,7 +2781,6 @@ async function getAvalibleSource() {
       method: 'HEAD'
     }); // Use 'HEAD' method to fetch only headers
     if (response.ok) {
-      //console.log('.to');
       currentSource = 'https://vidsrc.to/';
     } else {
       throw new Error('VidSrc.to is down!');
@@ -2093,20 +2791,20 @@ async function getAvalibleSource() {
         method: 'HEAD'
       }); // Use 'HEAD' method to fetch only headers
       if (response.ok) {
-        //console.log('.me');
         currentSource = 'https://vidsrc.me/';
       } else {
         throw new Error('VidSrc.me is down!');
       }
     } catch (error2) {
-      console.log(error2);
-      console.log('Both VidSrc.to and VidSrc.me are down!');
+      console.error('Both VidSrc.to and VidSrc.me are down!\n');
     }
   }
 }
 
 function loadSearchSuggestions() {
   // this function gets a random selection of movies and tv shows on tmdb for search suggestions on the search page
+
+  var container = document.getElementById('searchPage').querySelector('.container');
 
   var pageNum = Math.floor(Math.random() * 500);
   var movieURL = "https://api.themoviedb.org/3/discover/movie?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
@@ -2117,6 +2815,12 @@ function loadSearchSuggestions() {
       fetch(tvURL).then((response) => response.json())
     ])
     .then(([movies, tvShows]) => {
+
+      if (container.innerText != '') {
+        // don't do anything if there are already search results on the page
+        return;
+      }
+
       combinedResults = [...movies.results, ...tvShows.results];
       var shuffledList = shuffleList(combinedResults);
 
@@ -2148,7 +2852,6 @@ function loadSearchSuggestions() {
         main.appendChild(suggestion);
       }
       // append the main element to the container on the search page
-      var container = document.getElementById('searchPage').querySelector('.container');
       container.innerHTML = '';
       container.appendChild(main);
     })

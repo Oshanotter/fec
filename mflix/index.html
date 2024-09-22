@@ -92,6 +92,10 @@
                 <div id="tvShowsHistory" class="horizontalScroll"></div>
             </div>
         </div>
+        <div id="historyEditContainer" class="hidden">
+            <div class="button" onclick="editHistory()"><img src="icons/general/edit.svg" alt="edit">Edit History</div>
+            <div class="button hidden" onclick="saveHistory()"><img src="icons/general/save.svg" alt="save">Save History</div>
+        </div>
         <div class="spacer"></div>
     </div>
 
@@ -105,6 +109,24 @@
                 <input type="radio" name="autoStartTrailer" value="yes" class="button" onclick="setSetting('autoStartTrailer', true)">
                 <label>Yes</label>
                 <input type="radio" name="autoStartTrailer" value="no" class="button" onclick="setSetting('autoStartTrailer', false)">
+                <label>No</label>
+            </div>
+            <div id="saveWatchHistoryContainer" class="settingContainer">
+                <h4>
+                    Save Watch History:
+                </h4>
+                <input type="radio" name="saveWatchHistory" value="yes" class="button" onclick="setSetting('saveWatchHistory', true)">
+                <label>Yes</label>
+                <input type="radio" name="saveWatchHistory" value="no" class="button" onclick="setSetting('saveWatchHistory', false)">
+                <label>No</label>
+            </div>
+            <div id="showDeselectEpisodeContainer" class="settingContainer">
+                <h4>
+                    Show Deselect Episode Button:
+                </h4>
+                <input type="radio" name="showDeselectEpisode" value="yes" class="button" onclick="setSetting('showDeselectEpisode', true)">
+                <label>Yes</label>
+                <input type="radio" name="showDeselectEpisode" value="no" class="button" onclick="setSetting('showDeselectEpisode', false)">
                 <label>No</label>
             </div>
             <div class="settingContainer">
@@ -163,8 +185,21 @@
                 <div id="descriptionContent">Description of the movie or series. This should be a few sentences long. Some descriptions are longer than others though.</div>
             </div>
             <div id="buttonContainer" class="noFlex">
-                <div id="playButton" class="button" onclick=""><img src="icons/general/play_arrow.svg">Play</div>
-                <div id="resumeButton" class="button" onclick="resumeMedia()"><img src="icons/general/resume.svg">Resume</div>
+                <div id="playButton" class="button" onclick=""><img src="icons/general/play_arrow.svg">
+                    <div>Play</div>
+                </div>
+                <div id="resumeButton" class="button hidden" onclick="resumeMedia()"><img src="icons/general/resume.svg">Resume</div>
+                <div id="episodesButton" class="button hidden" onclick="dropdownEpisodeSelector()"><img src="icons/general/episodes.svg">Episodes</div>
+                <div id="episodesDropdown" class="hidden">
+                    <div>
+                        <div class="loadingWave">Loading Last Watched Episode...</div>
+                        <div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                        <div id="showDeselectEpisode" class="button hidden" onclick="deselectEpisode()">Deselect Episode</div>
+                    </div>
+                </div>
                 <div id="addToListButton" class="button" onclick="dropdownAddToListMenu()"><img src="icons/general/playlist_add.svg">Add To List</div>
                 <div id="addToListDropdown" class="hidden">
                     <div>

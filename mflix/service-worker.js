@@ -30,6 +30,7 @@ const generalIcons = [
   'close.svg',
   'delete.svg',
   'edit.svg',
+  'episodes.svg',
   'history.svg',
   'home.svg',
   'list.svg',
