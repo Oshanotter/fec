@@ -15,9 +15,9 @@ function main() {
   appendLoadingPosters('tvShowsPage', 20);
   appendLoadingPosters('tvShowsPage');
 
-  var movieHistory = document.getElementById('moviesHistory');
+  var movieHistory = document.getElementById('loadingMoviesHistory');
   appendLoadingPosters(movieHistory, 10);
-  var tvHistory = document.getElementById('tvShowsHistory');
+  var tvHistory = document.getElementById('loadingTvShowsHistory');
   appendLoadingPosters(tvHistory, 10);
   var loadingLists = document.getElementById('loadingLists');
   appendLoadingPosters(loadingLists, 10);
@@ -425,6 +425,12 @@ function loadPageContent(category) {
   } else if (category == 'myListsPage') {
     // load the content for the myListsPage
     getWatchLists();
+
+    // if the currently showing page is the history page, update the url hash
+    var historyContainer = document.getElementById('myListsPage').getElementsByClassName('container')[1];
+    if (!historyContainer.classList.contains('hidden')) {
+      window.location.hash = "page-history";
+    }
   }
 }
 
@@ -722,7 +728,8 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle) {
     })
     .catch(error => console.error(error));
 
-  // update the page's hash
+  // store the previous hash and update the page's hash to the new one
+  document.getElementById('backButton').dataset.previousHash = window.location.hash;
   window.location.hash = "watch-" + mediaType + "-" + mediaId;
 
 }
@@ -910,14 +917,8 @@ function resetInfoPage() {
   clearTimeout(trailerPlayerTimeout);
 
   // find which page is showing and update the page's hash
-  var mainPages = document.querySelectorAll('.main');
-  for (var i = 0; i < mainPages.length; i++) {
-    var main = mainPages[i];
-    if (!main.classList.contains('hidden')) {
-      break;
-    }
-  }
-  window.location.hash = "page-" + main.id;
+  var previousHash = document.getElementById('backButton').dataset.previousHash;
+  window.location.hash = previousHash;
 }
 
 
@@ -2054,26 +2055,27 @@ async function getHistory() {
       var mediaType = key;
       if (mediaType == "tv") {
         var horizontalScroll = document.getElementById('tvShowsHistory');
+        var loadingList = document.getElementById('loadingTvShowsHistory');
       } else {
         var horizontalScroll = document.getElementById('moviesHistory');
+        var loadingList = document.getElementById('loadingMoviesHistory');
       }
 
-      // create an array of promises for all addToHistory calls
-      let promises = list.map(dict => {
+      for (var j = 0; j < list.length; j++) {
+        var dict = list[j];
         var id = Object.keys(dict)[0];
         var position = Object.values(dict)[0];
-        return addToHistory(id, mediaType, position); // Return the promise
-      });
 
-      // run all promises in parallel
-      await Promise.all(promises);
+        await addToHistory(id, mediaType, position);
+      }
 
       if (list.length == 0) {
         horizontalScroll.innerHTML = '<div>Watch media to see it in your history...</div>';
       }
 
       // after all the lists are done loading, remove the loading posters
-      removeLoadingPosters(horizontalScroll);
+      loadingList.parentNode.remove();
+      horizontalScroll.parentNode.classList.remove('hidden');
 
       container.dataset.loading = "false";
       var historyPage = document.querySelector("#myListsPage").getElementsByClassName('container')[1];
