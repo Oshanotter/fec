@@ -3,7 +3,7 @@ var apiKey;
 var appsScriptBaseUrl = 'https://script.google.com/macros/s/AKfycbyFDxOpK9tZyuQWtzqPV7zXe979LLQSk288L4p5kIizBDGcLKRPX9YMfbNveG2tvyZ9bw/exec';
 var trailerPlayer;
 var trailerPlayerTimeout;
-var currentSource;
+var currentServerNum;
 
 // main function
 function main() {
@@ -36,22 +36,15 @@ function main() {
   addHeaderListeners();
   // add listeners for the zoom function
   addZoomListeners();
-  //add listeners fot the login page
+  // add listeners fot the login page
   addLoginPageListeners();
+  // add listeners for orientation changes or window size changes
+  addWindowResizeListeners();
 
-  // Add event listener for changes in orientation to adjust the max height of the overview flex element
-  window.addEventListener('orientationchange', function() {
-    var infoPage = document.getElementById('infoPage');
-    if (!infoPage.classList.contains('hidden')) {
-      adjustOverviewHeight();
-    }
-  });
+
 
   // adjust the page to reflect the current settings
   executeSettings();
-
-  // load the page from the hash in the window's url
-  loadPageFromUrlHash();
 
 }
 
@@ -70,6 +63,18 @@ function shuffleList(array) {
 
   // return the shuffled array
   return newArray;
+}
+
+function getRandomNumber(min, max) {
+  // gets a random number between two numbers (inclusive)
+
+  if (!max) {
+    // if max doesn't exist, that means that the input for min is max and min is actually zero
+    var max = min;
+    var min = 0;
+  }
+  var max = max + 1; // makes it inclusive
+  return Math.random() * (max - min) + min;
 }
 
 function stringToHash(string) {
@@ -245,8 +250,119 @@ function loadPageFromUrlHash() {
       });
 
     }
+  } else {
+    loadPageContent('homePage');
   }
 }
+
+function animateMoveElement(element, steps, direction) {
+  const parent = element.parentNode;
+  let sibling = element;
+
+  // Ensure steps are not zero
+  if (steps === 0) return;
+
+  // Define the element size (height for vertical, width for horizontal)
+  const size = direction === 'v' ? sibling.offsetHeight : sibling.offsetWidth;
+
+  // Helper function to handle DOM swap after animation
+  const swapElementsInDOM = (element, target) => {
+    if (target) {
+      // Move element up (insertBefore the target)
+      if (steps > 0) {
+        parent.insertBefore(element, target);
+      }
+      // Move element down (insert target before element)
+      else {
+        parent.insertBefore(target, element);
+      }
+    }
+  };
+
+  // Helper function to animate both elements
+  const animateSwap = (sibling, target) => {
+    // Add transition class for both elements
+    sibling.classList.add('moving');
+    target.classList.add('moving');
+
+    // Calculate and apply the translation based on direction (vertical or horizontal)
+    const translation = size * steps;
+    if (direction === 'v') {
+      sibling.style.transform = `translateY(${-translation}px)`;
+      target.style.transform = `translateY(${translation}px)`;
+    } else {
+      sibling.style.transform = `translateX(${-translation}px)`;
+      target.style.transform = `translateX(${translation}px)`;
+    }
+
+    // After the transition finishes, swap the elements in the DOM and reset the styles
+    setTimeout(() => {
+      // Reset the transformation
+      sibling.style.transform = '';
+      target.style.transform = '';
+
+      // Swap the elements in the DOM
+      swapElementsInDOM(sibling, target);
+
+      // Remove the transition class
+      sibling.classList.remove('moving');
+      target.classList.remove('moving');
+    }, 300); // Match the transition duration with CSS
+  };
+
+  // Handle moving up (positive steps)
+  if (steps > 0) {
+    for (let i = 0; i < steps; i++) {
+      const previousSibling = sibling.previousElementSibling;
+      if (previousSibling) {
+        animateSwap(sibling, previousSibling); // Animate the swap with previous sibling
+        sibling = previousSibling; // Continue with the previous sibling for next iteration
+      } else {
+        break; // Stop if reached the first sibling
+      }
+    }
+  }
+
+  // Handle moving down (negative steps)
+  if (steps < 0) {
+    for (let i = 0; i > steps; i--) {
+      const nextSibling = sibling.nextElementSibling;
+      if (nextSibling) {
+        animateSwap(sibling, nextSibling); // Animate the swap with next sibling
+        sibling = nextSibling; // Continue with the next sibling for next iteration
+      } else {
+        break; // Stop if reached the last sibling
+      }
+    }
+  }
+}
+
+function animateRemoval(element, direction) {
+  // Add the 'disappearing' class to smoothly fade out and shrink the element
+  if (direction == "v") {
+    const elementHeight = element.offsetHeight;
+    element.style.height = `${elementHeight}px`;
+    var className = 'disappearingVertical';
+  } else if (direction == "h") {
+    const elementWidth = element.offsetWidth;
+    element.style.width = `${elementWidth}px`;
+    var className = 'disappearingHorizontal';
+  }
+
+  // Step 2: Apply the transition in the next tick (after a tiny delay)
+  setTimeout(() => {
+    // Add the 'disappearing' class, which will cause the element to fade out and collapse
+    element.classList.add(className);
+  }, 10); // Small delay to ensure the height is applied first
+
+  // Step 3: Wait for the transition to finish, then remove the element from the DOM
+  setTimeout(() => {
+    element.parentNode.removeChild(element);
+  }, 310); // 300ms to match the CSS transition (plus a little buffer)
+}
+
+
+
 
 
 
@@ -256,15 +372,14 @@ function authenticate() {
 
   apiKey = getLocalStorage('Mflix.apiKey');
   if (apiKey) {
-    loadPageContent('homePage');
+    // load the page from the hash in the window's url
+    loadPageFromUrlHash();
     // hide the login page
     var loginPage = document.getElementById('loginPage');
     loginPage.classList.add("hidden");
     // add the user's name to the header
     var userProfileDiv = document.querySelector('#header > div > div');
     userProfileDiv.innerText = getLocalStorage('username');
-    // display search suggestions on the search page
-    loadSearchSuggestions();
 
   } else {
     var username = getLocalStorage('username');
@@ -412,8 +527,36 @@ function loadPageContent(category) {
           container.appendChild(poster);
         });
 
+        // append invisible posters
+        appendInvisiblePosters(container);
+
         // show that the content is already loaded
         container.dataset.loaded = "true";
+
+        var genreDict = {
+          10751: "Family Movies",
+          28: "Action Movies",
+          16: "Animation Movies",
+          12: "Adventure Movies",
+          14: "Fantasy Movies",
+          27: "Horror Movies",
+          878: "Science Fiction Movies",
+          18: "Drama Movies",
+          35: "Comedy Movies"
+        };
+
+        var currentDate = new Date().toISOString().split('T')[0]; // get current date in YYYY-MM-DD format
+
+        var keys = Object.keys(genreDict);
+        for (var i = 0; i < keys.length; i++) {
+          var genreId = keys[i];
+          var title = genreDict[genreId];
+          var pageNum = getRandomNumber(2, 50);
+          var url = 'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=' + pageNum + '&region=US&release_date.lte=' + currentDate + '&sort_by=popularity.desc&with_genres=' + genreId + '&with_origin_country=US&with_original_language=en&api_key=' + apiKey;
+          var mediaType = 'movie';
+          createHorizontalList(title, url, mediaType, container, '');
+        }
+
       })
       .catch(error => console.error('Error:', error));
 
@@ -431,6 +574,9 @@ function loadPageContent(category) {
     if (!historyContainer.classList.contains('hidden')) {
       window.location.hash = "page-history";
     }
+  } else if (category == 'searchPage') {
+    // display search suggestions on the search page
+    loadSearchSuggestions();
   }
 }
 
@@ -500,6 +646,10 @@ function getLatestMedia(pageNum = 1, category) {
         })
         .catch(error => console.error('Error fetching movie details:', error));
 
+    })
+    .catch(error => {
+      console.error(error);
+      alertMessage('Failed to get newly added media, server is down');
     });
 }
 
@@ -605,6 +755,130 @@ function removeLoadingPosters(mediaPageID) {
   for (var i = 0; i < loadingPosters.length; i++) {
     loadingPosters[i].remove();
   }
+}
+
+function appendInvisiblePosters(mediaPageID, repeatNum) {
+  // creates loading posters to display at the bottom of the movies and tv shows page
+
+  // if the page id is a string, get the container in that string
+  if (typeof mediaPageID == "string") {
+    var container = document.getElementById(mediaPageID).querySelector('.container');
+
+  } else {
+    // mediaPageID is an element, so append the posters directly to it
+    var container = mediaPageID;
+
+  }
+
+
+  if (!repeatNum) {
+    var numColumns = countColumns();
+    var numPosters = container.children.length;
+    var repeatNum = numColumns - (numPosters % numColumns);
+    if (repeatNum == numColumns) {
+      repeatNum = 0;
+    }
+  }
+
+  for (var i = 0; i < repeatNum; i++) {
+    var mainElm = document.createElement('div');
+    mainElm.classList.add('posterContainer');
+    mainElm.classList.add('noHover');
+
+    var qaulityElm = document.createElement('div');
+
+    var titleElm = document.createElement('div');
+
+    var span = document.createElement('span');
+
+    mainElm.appendChild(span);
+    mainElm.appendChild(qaulityElm);
+    mainElm.appendChild(titleElm);
+
+    container.appendChild(mainElm);
+  }
+
+}
+
+function adjustPosterSpacing() {
+  // adjusts how many loading or invisible posters are displayed on various pages
+
+  var containerList = ['searchPage', 'homePage', 'moviesPage', 'tvShowsPage'];
+
+  for (var i = 0; i < containerList.length; i++) {
+    let container = document.querySelector('#' + containerList[i] + ' > .container');
+    let children = container.querySelectorAll('.posterContainer');
+
+    // don't do anything if the following are true
+    if (container.dataset.lastpagenum == 0 || container.dataset.loaded == 'false' || children.length == 0) {
+      continue;
+    }
+
+    let posters = container.querySelectorAll('.loadingWave');
+    removeLoadingPosters(container);
+    if (posters.length > 0) {
+      // the posters should be loading
+      setTimeout(function() {
+        appendLoadingPosters(container);
+      }, 1);
+
+    } else {
+      // the posters shoud be invisible
+      setTimeout(function() {
+        appendInvisiblePosters(container);
+      }, 100);
+
+    }
+
+  }
+}
+
+async function createHorizontalList(title, url, mediaType, container, label) {
+  // creates a list in the container that is specified
+
+  // generate a new list
+  var newList = document.createElement('div');
+  newList.classList.add('listContainer');
+  newList.innerHTML = '<h4><div><div>' + title + '</div></div></div></h4><div class="horizontalScroll"></div>';
+
+
+  // fetch the url
+  var response = await fetch(url);
+  var data = await response.json();
+
+  var media = data.results;
+
+
+  var scrollContainer = newList.querySelector('.horizontalScroll');
+
+  // loop through each modia to create a poster
+  for (let i = 0; i < media.length; i++) {
+    let item = media[i];
+
+    var id = item.id;
+    var title = item.title || item.name;
+    if (label != undefined) {
+      var qualityDiv = label;
+    } else if (mediaType == 'tv') {
+      var qualityDiv = "TV";
+    } else if (mediaType == 'movie') {
+      var qualityDiv = "Movie";
+    }
+    var imgURL = item.poster_path;
+
+    // make the poster with the info, plus add an overlay that will move the media in the list
+    let poster = makePosterDiv(id, title, qualityDiv, imgURL, mediaType);
+
+    scrollContainer.appendChild(poster);
+  }
+
+
+  // append the list to the container
+  container.appendChild(newList);
+
+  // return the element
+  return newList;
+
 }
 
 
@@ -726,7 +1000,10 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle) {
       }
 
     })
-    .catch(error => console.error(error));
+    .catch(error => {
+      console.error(error);
+      alertMessage(error);
+    });
 
   // store the previous hash and update the page's hash to the new one
   document.getElementById('backButton').dataset.previousHash = window.location.hash;
@@ -918,7 +1195,13 @@ function resetInfoPage() {
 
   // find which page is showing and update the page's hash
   var previousHash = document.getElementById('backButton').dataset.previousHash;
-  window.location.hash = previousHash;
+  if (previousHash.includes('#watch-')) {
+    // the page was reloaded, so shiw the home page
+    displayPage('homePage');
+  } else {
+    // set the hash to the previousHash
+    window.location.hash = previousHash;
+  }
 }
 
 
@@ -1048,6 +1331,8 @@ async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
   var playBtn = document.getElementById('playButton');
   playBtn.onclick = "";
 
+  var infoPage = document.getElementById('infoPage');
+
 
   try {
     // get the vidsrc id from tmdb id
@@ -1065,16 +1350,17 @@ async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
       var sourceURL = sourceURL + "?autostart=true";
     }
   } catch {
-    // when getting the direct source fails
-    var sourceURL = currentSource + "embed/" + mediaType + "/" + tmdbID;
-    if (seasonNum && episodeNum) {
-      var sourceURL = sourceURL + "?season=" + seasonNum + "&episode=" + episodeNum;
-    }
+    // when getting the direct source fails, use the regular sources
+    var sourceURL = null;
   }
 
 
   // add the onclick function to play the movie
   playBtn.onclick = async function() {
+
+    if (sourceURL == null) {
+      var sourceURL = selectServer(1, mediaType, tmdbID, seasonNum, episodeNum);
+    }
     // play the movie by loading the sourceURL into the iframe
     playMovie(sourceURL);
 
@@ -1100,8 +1386,12 @@ async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
 
   if (mediaType == 'tv' && seasonNum && episodeNum) {
     playBtn.querySelector('div').innerText = "Play S" + seasonNum + " E" + episodeNum;
+    infoPage.dataset.season = seasonNum;
+    infoPage.dataset.episode = episodeNum;
   } else {
     playBtn.querySelector('div').innerText = "Play";
+    infoPage.removeAttribute('data-season');
+    infoPage.removeAttribute('data-episode');
   }
 }
 
@@ -1269,6 +1559,116 @@ function resumeMedia() {
   alert('Resume function coming soon');
 }
 
+function toggleServerSelection() {
+  // function to toggle the visibility of the server selection tab
+
+  var container = document.getElementById('serverSelection');
+  var children = container.children;
+
+  // start at index 1 to skip over the first element
+  for (var i = 1; i < children.length; i++) {
+    var child = children[i];
+    child.classList.toggle('hidden');
+  }
+
+  // make an event listener for when the user clicks off of the dropdown
+  var clickFunction = function(e) {
+
+    // if the user clicks on the 'Try a different server' button, toggle the serverSelection
+    if (e.srcElement != children[0]) {
+      toggleServerSelection();
+    }
+
+    //remove the event listener if the user clicks the try a different server button
+    document.removeEventListener('click', clickFunction);
+
+  }
+
+  // add or remove the background color
+  if (container.style.backgroundColor == '') {
+    // add the background color and border
+    container.style.backgroundColor = 'var(--mflixGrey)';
+    container.style.border = '1px solid var(--mflixWhite)';
+    // add the event listener after a delay
+    setTimeout(function() {
+      document.addEventListener('click', clickFunction);
+    }, 0);
+  } else {
+    // remove the background color and border
+    container.style.backgroundColor = '';
+    container.style.border = '';
+  }
+
+}
+
+function selectServer(index, mediaType, id, season, episode) {
+  // function to select which server the iframe should use
+
+  var list = [{
+      movie: "https://vidsrc.me/embed/movie?tmdb=<id>",
+      tv: "https://vidsrc.me/embed/tv?tmdb=<id>&season=<s>&episode=<e>"
+    },
+    {
+      movie: "https://vidsrc.to/embed/movie/<id>",
+      tv: "https://vidsrc.to/embed/tv/<id>/<s>/<e>"
+    },
+    {
+      movie: "https://vidsrc.cc/v2/embed/movie/<id>",
+      tv: "https://vidsrc.cc/v2/embed/tv/<id>/<s>/<e>"
+    },
+    {
+      movie: "https://vidsrc.icu/embed/movie/<id>",
+      tv: "https://vidsrc.icu/embed/tv/<id>/<s>/<e>"
+    }
+  ];
+
+  var container = document.getElementById('serverSelection');
+  var children = container.children;
+
+  // remove the active class from the active server
+  container.querySelector('.active').classList.remove('active');
+
+  // add the active class to the new server
+  children[index].classList.add('active');
+
+  // if the user clicked on the 'Try a different server' button
+  if (!mediaType && !id) {
+    // get the id, media type, and season and episode numbers
+    var infoPage = document.getElementById('infoPage');
+    var id = infoPage.dataset.id;
+    var mediaType = infoPage.dataset.mediaType;
+    var seasonNum = infoPage.dataset.season;
+    var episodeNum = infoPage.dataset.episode;
+    var skipSetUrl = false;
+  } else {
+    var seasonNum = season;
+    var episodeNum = episode;
+    var skipSetUrl = true;
+  }
+
+  // get the correct url from the list of dicts by getting the dict at the zero based index
+  var dict = list[index - 1];
+  var url = dict[mediaType];
+
+  // if the season and episode numbers are undefined, use the server without specifing them
+  if (!seasonNum || !episodeNum) {
+    var url = url.split('<id>')[0] + id;
+  } else {
+    var url = url.replace('<id>', id).replace('<s>', seasonNum).replace('<e>', episodeNum);
+  }
+
+  if (skipSetUrl) {
+    // just return the url
+    return url;
+
+  } else {
+    // set the url of the iframe to the new url
+    var iframe = document.getElementById('movieIframe');
+    iframe.src = url;
+  }
+
+}
+
 
 
 // functions for searching for movies and tv shows
@@ -1366,6 +1766,9 @@ function displaySearchResults(dict) {
     var poster = makePosterDiv(item.id, title, qualityDiv, item.poster_path, item.media_type);
     container.appendChild(poster);
   });
+
+  // append some invisible posters
+  appendInvisiblePosters(container);
 
   // update the page hash
   var query = document.getElementById('searchInput').value;
@@ -1485,17 +1888,20 @@ function appendExistingList(name, mediaList) {
 
   // add an onclick event to the delete button
   newList.querySelector('div:nth-of-type(1) > div:nth-of-type(2)').onclick = function() {
-    newList.remove();
+    //newList.remove();
+    animateRemoval(newList, 'v');
   };
 
   // add an onclick event to move the list up amongst its siblings
   newList.querySelector('div:nth-of-type(2) > div:nth-of-type(1)').onclick = function() {
-    moveElement(newList, 1);
+    //moveElement(newList, 1);
+    animateMoveElement(newList, 1, 'v');
   }
 
   // add an onclick event to move the list down amongst its siblings
   newList.querySelector('div:nth-of-type(2) > div:nth-of-type(2)').onclick = function() {
-    moveElement(newList, -1);
+    //moveElement(newList, -1);
+    animateMoveElement(newList, -1, 'v');
   }
 
   // Creating an array of fetch promises for each movie ID
@@ -1535,16 +1941,19 @@ function appendExistingList(name, mediaList) {
           if (poster.parentNode.children.length == 1) {
             poster.parentNode.innerHTML = '<div>Add Movies or TV Shows to this list...</div>';
           } else {
-            poster.remove();
+            //poster.remove();
+            animateRemoval(poster, 'h');
           }
           event.stopPropagation();
         }
         buttonsOverlay.querySelector('div:nth-of-type(2)').onclick = function() {
-          moveElement(poster, 1);
+          //moveElement(poster, 1);
+          animateMoveElement(poster, 1, 'h');
           event.stopPropagation();
         }
         buttonsOverlay.querySelector('div:nth-of-type(3)').onclick = function() {
-          moveElement(poster, -1);
+          //moveElement(poster, -1);
+          animateMoveElement(poster, -1, 'h');
           event.stopPropagation();
         }
         buttonsOverlay.onclick = function() {
@@ -2135,7 +2544,8 @@ async function addToHistory(id, mediaType, position, save = false) {
       if (poster.parentNode.children.length == 1) {
         poster.parentNode.innerHTML = '<div>Watch media to see it in your history...</div>';
       } else {
-        poster.remove();
+        //poster.remove();
+        animateRemoval(poster, 'h');
       }
       event.stopPropagation();
     }
@@ -2685,6 +3095,22 @@ function addScrollListeners() {
   }
 }
 
+function addWindowResizeListeners() {
+  // adds a listener for when the orientation changes or the window resizes
+
+  window.addEventListener('resize', function() {
+
+    // adjust the max height of the overview flex element
+    var infoPage = document.getElementById('infoPage');
+    if (!infoPage.classList.contains('hidden')) {
+      adjustOverviewHeight();
+    }
+
+    // adjust how many loading or invisible posters are seen
+    adjustPosterSpacing();
+  });
+}
+
 function addSearchListeners() {
   // this function adds a variety of different event listeners relating to the search page
 
@@ -2776,31 +3202,28 @@ function addLoginPageListeners() {
 }
 
 async function getAvalibleSource() {
-  // see which movie source is avalible, sidsrc.to or vidsrc.me
+  // see which movie source website is avalible
+
+  // set the source to the default source immediately
+  var defaultSource = new URL('https://vidsrc.me/');
+  var url = defaultSource + 'movies/latest/page-1.json';
+  currentServerNum = 1;
 
   try {
-    var response = await fetch('https://vidsrc.to/movies/latest/page-1.json', {
+    var response = await fetch(url, {
       method: 'HEAD'
     }); // Use 'HEAD' method to fetch only headers
     if (response.ok) {
-      currentSource = 'https://vidsrc.to/';
+      // do nothing, the default server is already set
+      return;
     } else {
-      throw new Error('VidSrc.to is down!');
+      // set the current server number to the backup server
+      currentServerNum = 3;
     }
-  } catch (error) {
-    try {
-      var response = await fetch('https://vidsrc.me/movies/latest/page-1.json', {
-        method: 'HEAD'
-      }); // Use 'HEAD' method to fetch only headers
-      if (response.ok) {
-        currentSource = 'https://vidsrc.me/';
-      } else {
-        throw new Error('VidSrc.me is down!');
-      }
-    } catch (error2) {
-      console.error('Both VidSrc.to and VidSrc.me are down!\n');
-    }
+  } catch (e) {
+    console.error(e);
   }
+
 }
 
 function loadSearchSuggestions() {
@@ -2808,7 +3231,7 @@ function loadSearchSuggestions() {
 
   var container = document.getElementById('searchPage').querySelector('.container');
 
-  var pageNum = Math.floor(Math.random() * 500);
+  var pageNum = getRandomNumber(500);
   var movieURL = "https://api.themoviedb.org/3/discover/movie?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
   var tvURL = "https://api.themoviedb.org/3/discover/tv?region=US&with_origin_country=US&language=en-US&page=" + pageNum + "&api_key=" + apiKey;
 

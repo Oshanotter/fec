@@ -43,13 +43,13 @@
             <img src="icons/general/search.svg" alt="img-search">
             <div id="searchDropdown"></div>
         </div>
-        <div class="container" data-lastpagenum="0" data-loading="false"></div>
+        <div class="container" data-loading="false"></div>
         <div class="spacer"></div>
     </div>
 
     <div id="homePage" class="main">
         <h2>Trending Movies</h2>
-        <div class="container"></div>
+        <div class="container" data-loaded="false"></div>
         <div class="spacer"></div>
     </div>
 
@@ -244,7 +244,31 @@
         </div>
     </div>
     <div id="iframeContainer" class="hidden">
-        <div id="xMovie" onclick="stopMovie()" class="button"><img src="icons/general/close.svg" alt="X"></div>
+        <div id="xMediaBtn" onclick="stopMovie()" class="button"><img src="icons/general/close.svg" alt="X"></div>
+
+        <div id="serverSelection">
+
+            <div class="button" onclick="toggleServerSelection()">
+                Try a different server
+            </div>
+
+            <div class="button hidden active" onclick="selectServer(1)">
+                Server 1 — me
+            </div>
+
+            <div class="button hidden" onclick="selectServer(2)">
+                Server 2 — to
+            </div>
+
+            <div class="button hidden" onclick="selectServer(3)">
+                Server 3 — cc
+            </div>
+
+            <div class="button hidden" onclick="selectServer(4)">
+                Server 4 — icu
+            </div>
+
+        </div>
 
         <iframe id="movieIframe" src="" allowfullscreen="yes" frameborder="no" scrolling="no" autoplay="yes"></iframe>
     </div>

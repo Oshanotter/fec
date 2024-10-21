@@ -277,6 +277,8 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
   background: radial-gradient(rgba(255, 255, 255, 0), var(--mflixOrange));
   transform: scale(1.05);
   border: 2px solid var(--mflixWhite);
+  /* animate the transition from not hovering to hovering */
+  transition: all 0.3s ease;
 }
 
 .posterListButtons {
@@ -697,7 +699,7 @@ BELOW ARE ELEMENTS RELATING TO THE MEDIA AND YOUTUBE PLAYERS
   overflow: hidden;
 }
 
-#xMovie {
+#xMediaBtn {
   /* the close button to go back from the playing media */
   background-color: var(--mflixOrange);
   width: 4em;
@@ -715,6 +717,34 @@ BELOW ARE ELEMENTS RELATING TO THE MEDIA AND YOUTUBE PLAYERS
   img {
     height: 100%;
     filter: var(--whiteFilter);
+  }
+}
+
+#serverSelection {
+  position: absolute;
+  top: 2em;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  color: var(--mflixOrange);
+  text-decoration: underline;
+  border-radius: 5px;
+  padding: 0.25em 0.5em;
+
+  div:nth-of-type(1) {
+    color: var(--mflixOrange)
+  }
+
+  div {
+    color: var(--mflixWhite);
+    text-decoration: underline;
+    display: flex;
+    justify-content: center;
+    padding: 0.15em 0;
+  }
+
+  .active {
+    color: var(--mflixOrange);
   }
 }
 
@@ -965,71 +995,6 @@ BELOW ARE ELEMENTS RELATING TO THE MY LISTS PAGE
     }
   }
 
-  .listContainer {
-    width: 100%;
-
-    h4 {
-      /* the headers for list sections */
-      width: 90%;
-      height: 1.5em;
-      border-top: 2px solid var(--mflixOrange);
-      padding: 0.5em 5% 0 0;
-      margin: 0 0 0 5%;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-
-      div {
-        /* all div elements in the h4 tag */
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        height: 100%;
-      }
-
-      >div:nth-of-type(1) {
-
-        /* the element with the title, input, and trash can */
-        input {
-          display: none;
-        }
-
-        div:nth-of-type(2) {
-          /* the second div with the trash can */
-          /* this filter needs to be here for a glitch that turns icon red */
-          filter: brightness(1);
-          display: none;
-
-          img {
-            filter: var(--orangeFilter);
-            margin-left: 1em;
-            height: 100%;
-          }
-        }
-      }
-
-      >div:nth-of-type(2) {
-        /* the element with the up and down arrows */
-        display: none;
-
-        >div {
-          background-color: var(--mflixOrange);
-          border: 2px solid var(--mflixWhite);
-          border-radius: 999px;
-          aspect-ratio: 1 / 1;
-          box-sizing: border-box;
-          margin-right: 0.5em;
-
-          img {
-            height: 100%;
-            filter: var(--whiteFilter);
-          }
-        }
-      }
-    }
-  }
-
   .editList {
     h4 {
       >div:nth-of-type(1) {
@@ -1094,6 +1059,71 @@ BELOW ARE ELEMENTS RELATING TO THE MY LISTS PAGE
   }
 }
 
+.listContainer {
+  width: 100%;
+
+  h4 {
+    /* the headers for list sections */
+    width: 90%;
+    height: 1.5em;
+    border-top: 2px solid var(--mflixOrange);
+    padding: 0.5em 5% 0 0;
+    margin: 0 0 0 5%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    div {
+      /* all div elements in the h4 tag */
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      height: 100%;
+    }
+
+    >div:nth-of-type(1) {
+
+      /* the element with the title, input, and trash can */
+      input {
+        display: none;
+      }
+
+      div:nth-of-type(2) {
+        /* the second div with the trash can */
+        /* this filter needs to be here for a glitch that turns icon red */
+        filter: brightness(1);
+        display: none;
+
+        img {
+          filter: var(--orangeFilter);
+          margin-left: 1em;
+          height: 100%;
+        }
+      }
+    }
+
+    >div:nth-of-type(2) {
+      /* the element with the up and down arrows */
+      display: none;
+
+      >div {
+        background-color: var(--mflixOrange);
+        border: 2px solid var(--mflixWhite);
+        border-radius: 999px;
+        aspect-ratio: 1 / 1;
+        box-sizing: border-box;
+        margin-right: 0.5em;
+
+        img {
+          height: 100%;
+          filter: var(--whiteFilter);
+        }
+      }
+    }
+  }
+}
+
 /*
 
 BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
@@ -1118,11 +1148,16 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
       font-weight: bold;
       padding-left: env(safe-area-inset-left, 0px);
       margin-left: calc(-1 * env(safe-area-inset-left, 0px));
+      width: 100%;
+      /* animate the transition from active to non active elements */
+      transition: width 0.15s ease;
 
       img {
         /* the image */
         margin-left: 1vw;
         margin-right: 1vw;
+        /* animate the transition from active to non active elements */
+        transition: margin 0.15s ease;
       }
 
       div {
@@ -1132,12 +1167,17 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
     }
 
     div.active {
-      padding-right: 2vw !important;
+      /*padding-right: 2vw !important;*/
+      width: calc(100% + 2vw);
       margin-right: -2vw !important;
       border-radius: 0px 15px 15px 0px;
+      /* animate the transition from non active to active elements */
+      transition: all 0.3s ease;
 
       img {
         margin-left: 3vw;
+        /* animate the transition from non active to active elements */
+        transition: margin 0.3s ease;
       }
     }
   }
@@ -1226,6 +1266,8 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
       display: flex;
       width: 20%;
       height: 100%;
+      /* animate the transition between active and inactive elements */
+      transition: margin 0.3s ease;
 
       div {
         /* the menu item text */
@@ -1245,6 +1287,8 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
       padding-bottom: 2vh;
       margin-top: -2vh;
       border-radius: 15px 15px 0px 0px;
+      /* animate the transition between active and inactive elements */
+      transition: margin 0.3s ease;
     }
   }
 
@@ -1340,4 +1384,26 @@ BELOW ARE ELEMENTS THAT ARE USED FOR ANIMATION
   100% {
     transform: translate(25%, 25%);
   }
+}
+
+.moving {
+  transition: transform 0.3s ease;
+}
+
+.disappearingVertical {
+  opacity: 0;
+  transition: opacity 0.3s ease, height .3s ease, margin 0.3s ease, padding 0.3s ease;
+  height: 0 !important;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.disappearingHorizontal {
+  opacity: 0;
+  transition: opacity 0.3s ease, width .3s ease, margin 0.3s ease, padding 0.3s ease;
+  width: 0 !important;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 }
