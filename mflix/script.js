@@ -3,7 +3,7 @@ var apiKey;
 var appsScriptBaseUrl = 'https://script.google.com/macros/s/AKfycbyFDxOpK9tZyuQWtzqPV7zXe979LLQSk288L4p5kIizBDGcLKRPX9YMfbNveG2tvyZ9bw/exec';
 var trailerPlayer;
 var trailerPlayerTimeout;
-var currentServerNum;
+var selectedServer = null;
 
 // main function
 function main() {
@@ -25,8 +25,6 @@ function main() {
   // authenticate the current user immediately
   authenticate();
 
-  // get the source to use to watch the movies
-  getAvalibleSource();
 
   // add the scroll listeners in order to load more media
   addScrollListeners();
@@ -236,7 +234,9 @@ function loadPageFromUrlHash() {
       var parts = id.split('-');
       var mediaType = parts[1];
       var tmdbId = parts[2];
-      displayInfoPage(tmdbId, mediaType);
+      var seasonNum = parts[3];
+      var episodeNum = parts[4];
+      displayInfoPage(tmdbId, mediaType, undefined, seasonNum, episodeNum);
 
     } else if (id.includes('search-')) {
       var searchString = id.substring(7); // remove the first 7 characters, which are 'search-'
@@ -686,7 +686,8 @@ function makePosterDiv(id, title = "undefined title", quality = "", imgURL, medi
 
 
   mainElm.onclick = function() {
-    displayInfoPage(id, mediaType, title);
+    // display the info page
+    displayInfoPage(id, mediaType, title, 1, 1); // the two ones are for selecting the default season and episode
   };
 
   mainElm.appendChild(img);
@@ -884,8 +885,12 @@ async function createHorizontalList(title, url, mediaType, container, label) {
 
 
 // functions that display or get info for the infoPage
-async function displayInfoPage(mediaId, mediaType, optionalTitle) {
+async function displayInfoPage(mediaId, mediaType, optionalTitle, optionalSeasonNum, optionalEpisodeNum) {
   // display the info page with the results about the movie or tv show
+
+  // store the previous hash and update the page's hash to the new one
+  document.getElementById('backButton').dataset.previousHash = window.location.hash;
+  window.location.hash = "watch-" + mediaType + "-" + mediaId;
 
   // load a video right away so that the player on mobile doesn't error on first attempt
   try {
@@ -984,8 +989,8 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle) {
         }
       });
 
-
-      preLoadMedia(mediaId, mediaType);
+      // preload the media
+      preLoadMedia(mediaId, mediaType, optionalSeasonNum, optionalEpisodeNum);
 
       // check to see if resuming the media is avalible
       if (resumeAvalible() && mediaType == 'movie') {
@@ -994,9 +999,7 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle) {
         document.getElementById('episodesButton').classList.remove('hidden');
         populateEpisodesDropdown(media.seasons, media.last_episode_to_air);
         // select the correct season and episode
-        if (getSetting('saveWatchHistory') && mediaType == 'tv') {
-          selectLastEpisode(mediaId);
-        }
+        selectLastEpisode(mediaId);
       }
 
     })
@@ -1004,10 +1007,6 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle) {
       console.error(error);
       alertMessage(error);
     });
-
-  // store the previous hash and update the page's hash to the new one
-  document.getElementById('backButton').dataset.previousHash = window.location.hash;
-  window.location.hash = "watch-" + mediaType + "-" + mediaId;
 
 }
 
@@ -1035,10 +1034,13 @@ function displayRating(ratingNum) {
 
   if (ratingNum == null || ratingNum == undefined || ratingNum == "") {
     var ratingNum = "-";
-  }
 
-  // round the rating to one decimal point
-  var ratingNum = Math.round(ratingNum * 10) / 10;
+
+  } else {
+    // round the rating to one decimal point
+    var ratingNum = Math.round(ratingNum * 10) / 10;
+
+  }
 
   var ratingElem = document.querySelector("#infoCluster > table > tbody > tr:nth-child(1) > td:nth-child(2)");
   var string = ratingNum + " ★";
@@ -1328,6 +1330,13 @@ function restartTrailer() {
 async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
   // try to get the original source from vidsrc, otherwise use the regular embed url
 
+  // update the hash to represent what episode the user is on
+  if (mediaType == 'tv' && seasonNum && episodeNum) {
+    window.location.hash = "watch-" + mediaType + "-" + tmdbID + "-" + seasonNum + "-" + episodeNum;
+  } else if (mediaType == 'tv') {
+    window.location.hash = "watch-" + mediaType + "-" + tmdbID;
+  }
+
   var playBtn = document.getElementById('playButton');
   playBtn.onclick = "";
 
@@ -1359,7 +1368,11 @@ async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
   playBtn.onclick = async function() {
 
     if (sourceURL == null) {
-      var sourceURL = selectServer(1, mediaType, tmdbID, seasonNum, episodeNum);
+      var serverNum = getDefaultServer();
+      var sourceURL = selectServer(serverNum, mediaType, tmdbID, seasonNum, episodeNum);
+      infoPage.dataset.season = seasonNum;
+      infoPage.dataset.episode = episodeNum;
+      toggleEpisodesButtons(mediaType, seasonNum, episodeNum);
     }
     // play the movie by loading the sourceURL into the iframe
     playMovie(sourceURL);
@@ -1604,6 +1617,8 @@ function toggleServerSelection() {
 function selectServer(index, mediaType, id, season, episode) {
   // function to select which server the iframe should use
 
+  selectedServer = index;
+
   var list = [{
       movie: "https://vidsrc.me/embed/movie?tmdb=<id>",
       tv: "https://vidsrc.me/embed/tv?tmdb=<id>&season=<s>&episode=<e>"
@@ -1667,6 +1682,167 @@ function selectServer(index, mediaType, id, season, episode) {
     iframe.src = url;
   }
 
+}
+
+async function watchPreviousEpisode() {
+  // function to select the previous episode over the iframe
+
+  var infoPage = document.getElementById('infoPage');
+  var mediaType = infoPage.dataset.mediaType;
+  var tmdbID = infoPage.dataset.id;
+
+  var currentSeasonNum = Number(infoPage.dataset.season);
+  var currentEpisodeNum = Number(infoPage.dataset.episode);
+
+  if (currentEpisodeNum - 1 <= 0) {
+    // go to the next season
+    if (currentSeasonNum - 1 <= 0) {
+      alertMessage("No previous episodes avalible.");
+      return;
+    } else {
+      var seasonNum = currentSeasonNum - 1;
+      var episodeNum = Number(infoPage.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)").children[seasonNum].dataset.numEpisodes);
+    }
+  } else {
+    var seasonNum = currentSeasonNum;
+    var episodeNum = currentEpisodeNum - 1;
+  }
+
+  var serverNum = getDefaultServer();
+  var sourceURL = selectServer(serverNum, mediaType, tmdbID, seasonNum, episodeNum);
+  infoPage.dataset.season = seasonNum;
+  infoPage.dataset.episode = episodeNum;
+  toggleEpisodesButtons(mediaType, seasonNum, episodeNum);
+
+  // play the movie by loading the sourceURL into the iframe
+  playMovie(sourceURL);
+
+  if (getSetting('saveWatchHistory')) {
+
+    await getPlaybackPosition(tmdbID, mediaType);
+    if (mediaType == 'tv') {
+      if (seasonNum && episodeNum) {
+        var position = "s" + seasonNum + "e" + episodeNum;
+      } else {
+        var position = "s0e0";
+      }
+
+    } else if (mediaType == 'movie') {
+      var position = seasonNum || 0;
+    }
+
+
+    addToHistory(tmdbID, mediaType, position, true);
+  }
+
+}
+
+async function watchNextEpisode() {
+  // function to select the next episode over the iframe
+
+  var infoPage = document.getElementById('infoPage');
+  var mediaType = infoPage.dataset.mediaType;
+  var tmdbID = infoPage.dataset.id;
+
+  var currentSeasonNum = Number(infoPage.dataset.season);
+  var currentEpisodeNum = Number(infoPage.dataset.episode);
+  var numOfSeasons = infoPage.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)").children.length;
+  var episodesInSeason = Number(infoPage.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)").children[currentSeasonNum - 1].dataset.numEpisodes);
+
+  if (currentEpisodeNum + 1 > episodesInSeason) {
+    // go to the next season
+    if (currentSeasonNum + 1 > numOfSeasons) {
+      alertMessage("No more episodes avalible.");
+      return;
+    } else {
+      var seasonNum = currentSeasonNum + 1;
+      var episodeNum = 1;
+    }
+  } else {
+    var seasonNum = currentSeasonNum;
+    var episodeNum = currentEpisodeNum + 1;
+  }
+
+  var serverNum = getDefaultServer();
+  var sourceURL = selectServer(serverNum, mediaType, tmdbID, seasonNum, episodeNum);
+  infoPage.dataset.season = seasonNum;
+  infoPage.dataset.episode = episodeNum;
+  toggleEpisodesButtons(mediaType, seasonNum, episodeNum);
+
+  // play the movie by loading the sourceURL into the iframe
+  playMovie(sourceURL);
+
+  if (getSetting('saveWatchHistory')) {
+
+    await getPlaybackPosition(tmdbID, mediaType);
+    if (mediaType == 'tv') {
+      if (seasonNum && episodeNum) {
+        var position = "s" + seasonNum + "e" + episodeNum;
+      } else {
+        var position = "s0e0";
+      }
+
+    } else if (mediaType == 'movie') {
+      var position = seasonNum || 0;
+    }
+
+
+    addToHistory(tmdbID, mediaType, position, true);
+  }
+
+}
+
+function toggleEpisodesButtons(mediaType, seasonNum, episodeNum) {
+  // function to show it hide the previous and next episode buttons over the iframe
+
+  var prevBtn = document.getElementById('previousEpisodeBtn');
+  var nextBtn = document.getElementById('nextEpisodeBtn');
+
+  if (mediaType == 'movie' || (mediaType == 'tv' && (!seasonNum || !episodeNum))) {
+    prevBtn.classList.add('hidden');
+    nextBtn.classList.add('hidden');
+    return;
+  }
+
+  // the mediaType must be tv, so show the buttons and figure out if the episodes are out if range
+  prevBtn.classList.remove('hidden');
+  nextBtn.classList.remove('hidden');
+
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  var numSeasons = seasonsContainer.children.length;
+  var lastSeasonElm = seasonsContainer.children[numSeasons - 1];
+  var lastEpisode = lastSeasonElm.dataset.numEpisodes;
+
+  // if the current episode is the last avalible episode
+  if (seasonNum == numSeasons && episodeNum == lastEpisode) {
+    // make the next episode button unavalible
+    nextBtn.classList.add('disabled');
+
+  } else {
+    nextBtn.classList.remove('disabled');
+  }
+
+  // if the current episode is the very first episode
+  if (seasonNum == 1 && episodeNum == 1) {
+    // make the next episode button unavalible
+    prevBtn.classList.add('disabled');
+
+  } else {
+    prevBtn.classList.remove('disabled');
+  }
+
+
+}
+
+function getDefaultServer() {
+  // function to get either the selected server or the default server
+
+  // if the selected server isn't defined, use the default server
+  if (selectedServer == null) {
+    return getSetting('defaultServer');
+  }
+
+  return selectedServer;
 }
 
 
@@ -2825,6 +3001,12 @@ function populateEpisodesDropdown(list, lastEpisodeDict) {
       element.classList.add('active');
     }
     element.dataset.ep = 0; // set the currently selected episode to 0
+    // set the dataset numEpisodes to however many episodes are currently in that season
+    if (seasonNumber == lastEpisodeDict.season_number) {
+      element.dataset.numEpisodes = lastEpisodeDict.episode_number;
+    } else {
+      element.dataset.numEpisodes = numEpisodes;
+    }
 
     element.onclick = function() {
 
@@ -2923,13 +3105,6 @@ function selectLastEpisode(id) {
     var loadingLastWatchedEpisodeDiv = document.querySelector("#episodesDropdown > div > div:nth-child(1)");
     loadingLastWatchedEpisodeDiv.innerText = "";
     loadingLastWatchedEpisodeDiv.classList.remove('loadingWave');
-    // click on the ffirst season and episode
-    try {
-      seasonsContainer.children[0].click();
-      episodesContainer.children[0].click();
-    } catch (e) {
-      console.error(e);
-    }
   }
 }
 
@@ -2962,7 +3137,8 @@ function getSetting(setting) {
     autoStartTrailer: true,
     saveWatchHistory: true,
     showDeselectEpisode: false,
-    zoom: 100
+    zoom: 100,
+    defaultServer: 3
   }
 
   var value = getLocalStorage('Mflix.settings.' + setting);
@@ -2980,6 +3156,10 @@ function setSetting(setting, value) {
 
   // immediately execute the attribution of the settings
   executeSettings();
+
+  if (setting == "defaultServer") {
+    selectedServer = null;
+  }
 }
 
 function executeSettings() {
@@ -3023,6 +3203,23 @@ function executeSettings() {
   } else {
     btn1.removeAttribute('checked');
     btn2.setAttribute('checked', true);
+  }
+
+  // adjust defaultServer buttons
+  var container = document.getElementById('defaultServer');
+  var btn1 = container.querySelector('.btnContainer:nth-of-type(1) > input');
+  var btn2 = container.querySelector('.btnContainer:nth-of-type(2) > input');
+  var btn3 = container.querySelector('.btnContainer:nth-of-type(3) > input');
+  var btn4 = container.querySelector('.btnContainer:nth-of-type(4) > input');
+  var serverList = [btn1, btn2, btn3, btn4];
+  var selection = getSetting('defaultServer') - 1;
+  for (var i = 0; i < serverList.length; i++) {
+    var btn = serverList[i];
+    if (i == selection) {
+      btn.setAttribute('checked', true);
+    } else {
+      btn.removeAttribute('checked');
+    }
   }
 
 }
@@ -3198,31 +3395,6 @@ function addLoginPageListeners() {
       login();
     }
   });
-
-}
-
-async function getAvalibleSource() {
-  // see which movie source website is avalible
-
-  // set the source to the default source immediately
-  var defaultSource = new URL('https://vidsrc.me/');
-  var url = defaultSource + 'movies/latest/page-1.json';
-  currentServerNum = 1;
-
-  try {
-    var response = await fetch(url, {
-      method: 'HEAD'
-    }); // Use 'HEAD' method to fetch only headers
-    if (response.ok) {
-      // do nothing, the default server is already set
-      return;
-    } else {
-      // set the current server number to the backup server
-      currentServerNum = 3;
-    }
-  } catch (e) {
-    console.error(e);
-  }
 
 }
 

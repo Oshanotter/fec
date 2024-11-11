@@ -145,6 +145,27 @@
                 <input type="number" id="zoomInput" name="zoomLevel" value="100" max="300" min="30">
                 <div onclick="setZoom('+')" class="button">+</div>
             </div>
+            <div id="defaultServer" class="settingContainer">
+                <h4>
+                    Default Server:
+                </h4>
+                <div class="btnContainer">
+                    <input type="radio" name="defaultServer" value="1" class="button" onclick="setSetting('defaultServer', 1)">
+                    <label>1 - me</label>
+                </div>
+                <div class="btnContainer">
+                    <input type="radio" name="defaultServer" value="2" class="button" onclick="setSetting('defaultServer', 2)">
+                    <label>2 - to</label>
+                </div>
+                <div class="btnContainer">
+                    <input type="radio" name="defaultServer" value="3" class="button" onclick="setSetting('defaultServer', 3)">
+                    <label>3 - cc</label>
+                </div>
+                <div class="btnContainer">
+                    <input type="radio" name="defaultServer" value="4" class="button" onclick="setSetting('defaultServer', 4)">
+                    <label>4 - icu</label>
+                </div>
+            </div>
         </div>
         <div class="spacer"></div>
     </div>
@@ -247,28 +268,15 @@
         <div id="xMediaBtn" onclick="stopMovie()" class="button"><img src="icons/general/close.svg" alt="X"></div>
 
         <div id="serverSelection">
-
-            <div class="button" onclick="toggleServerSelection()">
-                Try a different server
-            </div>
-
-            <div class="button hidden active" onclick="selectServer(1)">
-                Server 1 — me
-            </div>
-
-            <div class="button hidden" onclick="selectServer(2)">
-                Server 2 — to
-            </div>
-
-            <div class="button hidden" onclick="selectServer(3)">
-                Server 3 — cc
-            </div>
-
-            <div class="button hidden" onclick="selectServer(4)">
-                Server 4 — icu
-            </div>
-
+            <div class="button" onclick="toggleServerSelection()">Try a different server</div>
+            <div class="button hidden active" onclick="selectServer(1)">Server 1 — me</div>
+            <div class="button hidden" onclick="selectServer(2)">Server 2 — to</div>
+            <div class="button hidden" onclick="selectServer(3)">Server 3 — cc</div>
+            <div class="button hidden" onclick="selectServer(4)">Server 4 — icu</div>
         </div>
+
+        <div id="previousEpisodeBtn" class="button" onclick="watchPreviousEpisode()">Previous Episode</div>
+        <div id="nextEpisodeBtn" class="button" onclick="watchNextEpisode()">Next Episode</div>
 
         <iframe id="movieIframe" src="" allowfullscreen="yes" frameborder="no" scrolling="no" autoplay="yes"></iframe>
     </div>

@@ -42,6 +42,11 @@ BELOW ARE SOME COMMONLY USED CLASSES
   display: none !important;
 }
 
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 .button {
   cursor: pointer;
 }
@@ -748,6 +753,23 @@ BELOW ARE ELEMENTS RELATING TO THE MEDIA AND YOUTUBE PLAYERS
   }
 }
 
+#previousEpisodeBtn, #nextEpisodeBtn {
+  position: absolute;
+  bottom: 15%;
+  background-color: var(--mflixOrange);
+  border: 2px solid var(--mflixWhite);
+  border-radius: 5px;
+  padding: 0.25em 0.5em;
+}
+
+#previousEpisodeBtn {
+  left: 1em;
+}
+
+#nextEpisodeBtn {
+  right: 1em;
+}
+
 /*
 
 BELOW ARE ELEMENTS RELATING TO THE SEARCH FUNCTIONALITY
@@ -942,6 +964,20 @@ BELOW ARE THE ELEMENTS RELATING TO THE SETTINGS PAGE
 
     label {
       margin-right: 1em;
+    }
+
+    .btnContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-right: 1em;
+
+      label {
+        width: 100%;
+        margin-right: 0;
+        text-align: center;
+        white-space: nowrap;
+      }
     }
 
     .button {
