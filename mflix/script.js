@@ -1735,6 +1735,12 @@ async function watchPreviousEpisode() {
     addToHistory(tmdbID, mediaType, position, true);
   }
 
+  // make the play button show the correct season and episode
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
+  seasonsContainer.children[seasonNum - 1].click();
+  episodesContainer.children[episodeNum - 1].click();
+
 }
 
 async function watchNextEpisode() {
@@ -1789,6 +1795,12 @@ async function watchNextEpisode() {
 
     addToHistory(tmdbID, mediaType, position, true);
   }
+
+  // make the play button show the correct season and episode
+  var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
+  var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
+  seasonsContainer.children[seasonNum - 1].click();
+  episodesContainer.children[episodeNum - 1].click();
 
 }
 
