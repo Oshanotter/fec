@@ -241,7 +241,8 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
   justify-content: center;
   text-align: center;
 
-  >img, >span {
+  >img,
+  >span {
     /* the main image or loading element */
     border-radius: 15px;
     width: 95%;
@@ -457,7 +458,8 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
     }
   }
 
-  >.button, >div>.button {
+  >.button,
+  >div>.button {
     /* all other buttons in the buttonContainer */
     border: 2px solid var(--mflixOrange);
     background-color: var(--mflixBlue);
@@ -753,7 +755,8 @@ BELOW ARE ELEMENTS RELATING TO THE MEDIA AND YOUTUBE PLAYERS
   }
 }
 
-#previousEpisodeBtn, #nextEpisodeBtn {
+#previousEpisodeBtn,
+#nextEpisodeBtn {
   position: absolute;
   bottom: 15%;
   background-color: var(--mflixOrange);
@@ -794,7 +797,7 @@ BELOW ARE ELEMENTS RELATING TO THE SEARCH FUNCTIONALITY
       right: 1em;
       bottom: 0.5em;
       height: 1.5em;
-      pointer-events: none;
+      cursor: pointer;
     }
   }
 }
@@ -1067,7 +1070,8 @@ BELOW ARE ELEMENTS RELATING TO THE MY LISTS PAGE
   }
 }
 
-#listEditContainer, #historyEditContainer {
+#listEditContainer,
+#historyEditContainer {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -1261,7 +1265,8 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN LANDSCAPE MODE
     max-height: 100%;
   }
 
-  #addToListDropdown, #episodesDropdown {
+  #addToListDropdown,
+  #episodesDropdown {
     top: -1em;
 
     >div {
@@ -1364,7 +1369,8 @@ BELOW ARE ELEMENTS AFFECTED WHEN IN PORTRAIT MODE
     background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--mflixBlue));
   }
 
-  #addToListDropdown, #episodesDropdown {
+  #addToListDropdown,
+  #episodesDropdown {
     top: -1.75em;
 
     >div {

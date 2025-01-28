@@ -379,7 +379,14 @@ function authenticate() {
     loginPage.classList.add("hidden");
     // add the user's name to the header
     var userProfileDiv = document.querySelector('#header > div > div');
-    userProfileDiv.innerText = getLocalStorage('username');
+    var username = getLocalStorage('username');
+    userProfileDiv.innerText = username;
+    // load the user's watch lists and history right away
+    if (!username.includes("guest")) {
+      getWatchLists();
+      getHistory();
+    }
+
 
   } else {
     var username = getLocalStorage('username');
@@ -577,6 +584,19 @@ function loadPageContent(category) {
   } else if (category == 'searchPage') {
     // display search suggestions on the search page
     loadSearchSuggestions();
+
+    // check if the device is in landscape mode
+    if (window.matchMedia("(orientation: landscape)").matches) {
+      // if the user is on desktop, focus on the search bar right away
+      setTimeout(function() {
+        var searchbar = document.getElementById('searchInput');
+        if (searchbar.value != "") {
+          highlightSearchbar();
+        } else {
+          searchbar.focus();
+        }
+      }, 0);
+    }
   }
 }
 
@@ -912,7 +932,7 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle, optionalSeason
   fetch(url)
     .then(response => response.json())
     .then(media => {
-      // Display media info
+      // display media info
       var infoPage = document.getElementById('infoPage');
       infoPage.classList.remove('hidden');
       infoPage.dataset.id = mediaId;
@@ -1890,6 +1910,8 @@ function displaySearchDropdown(dict) {
   // make the search bar appear above the search results
   var searchBar = document.getElementById('searchInput');
   searchBar.style.zIndex = 2;
+  var magnifyingGlass = document.getElementById('magnifyingGlass');
+  magnifyingGlass.style.zIndex = 2;
 
   const results = dict['results'];
 
@@ -1926,6 +1948,8 @@ function hideSearchDropdown() {
   // change the search bar z index back to normal
   var searchBar = document.getElementById('searchInput');
   searchBar.style.zIndex = 0;
+  var magnifyingGlass = document.getElementById('magnifyingGlass');
+  magnifyingGlass.style.zIndex = 0;
 }
 
 function displaySearchResults(dict) {
@@ -1962,6 +1986,11 @@ function displaySearchResults(dict) {
   var query = document.getElementById('searchInput').value;
   var encodedQuery = encodeURIComponent(query)
   window.location.hash = 'search-' + encodedQuery;
+}
+
+function highlightSearchbar() {
+  // this function simply highlights the text in the search bar
+  document.getElementById('searchInput').select();
 }
 
 
@@ -2398,7 +2427,7 @@ function dropdownAddToListMenu() {
     container.addEventListener('scroll', scrollFunction);
     // set the scroll position to 1 to make scrolling smooth
     container.scrollTop = 1;
-  }, 0000);
+  }, 0);
 
 }
 
@@ -2974,7 +3003,7 @@ function dropdownEpisodeSelector() {
     // set the scroll position to 1 to make scrolling smooth
     seasonsContainer.scrollTop = 1;
     episodesContainer.scrollTop = 1;
-  }, 0000);
+  }, 0);
 
   // show or hide the Deselect Episode button
   if (getSetting('showDeselectEpisode')) {
