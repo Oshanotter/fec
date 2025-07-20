@@ -1017,7 +1017,7 @@ async function displayInfoPage(mediaId, mediaType, optionalTitle, optionalSeason
         document.getElementById('resumeButton').classList.remove('hidden');
       } else if (mediaType == 'tv') {
         document.getElementById('episodesButton').classList.remove('hidden');
-        populateEpisodesDropdown(media.seasons, media.last_episode_to_air);
+        populateEpisodesDropdown(media.seasons, media.last_episode_to_air, media.next_episode_to_air);
         // select the correct season and episode
         selectLastEpisode(mediaId);
       }
@@ -1084,9 +1084,18 @@ function displayCertification(movieId, mediaType) {
         // Find the US certification
         const usRelease = releaseData.results.find(country => country.iso_3166_1 === 'US');
         if (usRelease) {
-          var usCertification = usRelease.rating || usRelease.release_dates[0].certification;
-          if (usCertification == "") {
-            var usCertification = "NR";
+          if (mediaType == 'movie') {
+            // Find the theatrical wide release (type === 3) with a non-empty certification
+            const theatricalRelease = usRelease.release_dates.find(
+              release => release.type === 3 && release.certification && release.certification !== ""
+            );
+            if (theatricalRelease && theatricalRelease.certification) {
+              var usCertification = theatricalRelease.certification;
+            } else {
+              var usCertification = "NR";
+            }
+          } else if (mediaType == 'tv') {
+            var usCertification = usRelease.rating;
           }
           certificationElem.innerText = usCertification;
         } else {
@@ -3013,7 +3022,7 @@ function dropdownEpisodeSelector() {
   }
 }
 
-function populateEpisodesDropdown(list, lastEpisodeDict) {
+function populateEpisodesDropdown(list, lastEpisodeDict, nextEpisodeDict) {
   // populates the dropdown menu for the episodes selector on the infoPage
 
   var seasonsContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(1)");
@@ -3026,6 +3035,7 @@ function populateEpisodesDropdown(list, lastEpisodeDict) {
     let dict = list[i];
 
     let seasonNumber = dict.season_number;
+    var seasonNum = dict.season_number;
     let lastAiredSeason = lastEpisodeDict.season_number;
     if (seasonNumber == 0 || seasonNumber > lastAiredSeason) {
       continue; // skip the season if it is a special or if it hasn't aired yet
@@ -3100,10 +3110,37 @@ function populateEpisodesDropdown(list, lastEpisodeDict) {
         episodesContainer.scrollTop = 1;
       }
 
+      if (nextEpisodeDict && seasonNumber == nextEpisodeDict.season_number) {
+        // if the next episode to air is in this season, create a new episode element with the air date
+        var nextEpElem = document.createElement('div');
+        nextEpElem.innerText = "E" + nextEpisodeDict.episode_number + " Airing " + new Date(nextEpisodeDict.air_date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        });
+        nextEpElem.classList.add('nextEpAirDate');
+        episodesContainer.appendChild(nextEpElem);
+        episodesContainer.scrollTop = 1;
+      }
     }
 
     seasonsContainer.appendChild(element);
+
   }
+
+
+  if (nextEpisodeDict && seasonNum != nextEpisodeDict.season_number) {
+    // if the next episode to air is in the next season, create a new season element with the air date
+    var nextSeasonElem = document.createElement('div');
+    nextSeasonElem.innerText = "S" + nextEpisodeDict.season_number + " Airing " + new Date(nextEpisodeDict.air_date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+    nextSeasonElem.classList.add('nextEpAirDate');
+    seasonsContainer.appendChild(nextSeasonElem);
+  }
+
 }
 
 function selectLastEpisode(id) {

@@ -663,6 +663,11 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
     }
   }
 
+  .nextEpAirDate {
+    border: none !important;
+    font-size: 0.75em;
+  }
+
   >div::after {
     /* the cat ear */
     content: '';
