@@ -1657,8 +1657,8 @@ function selectServer(index, mediaType, id, season, episode) {
       tv: "https://vidsrc.to/embed/tv/<id>/<s>/<e>"
     },
     {
-      movie: "https://vidsrc.cc/v2/embed/movie/<id>",
-      tv: "https://vidsrc.cc/v2/embed/tv/<id>/<s>/<e>"
+      movie: "https://vidsrc.cc/v2/embed/movie/<id>?autoplay=true",
+      tv: "https://vidsrc.cc/v2/embed/tv/<id>/<s>/<e>?autoplay=true"
     },
     {
       movie: "https://vidsrc.icu/embed/movie/<id>",
