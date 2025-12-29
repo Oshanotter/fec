@@ -615,62 +615,123 @@ function getLatestMedia(pageNum = 1, category) {
     element.dataset.loading = 'true';
   }
 
+  var latestMediaSeverDown = true; // permanent fix for vidsrc media server not working
+  if (latestMediaSeverDown == true) {
 
-  if (category == 'moviesPage') {
-    var url = 'https://vidsrc.me/movies/latest/page-' + pageNum + '.json';
-    var mediaType = 'movie';
-  } else if (category == 'tvShowsPage') {
-    var url = 'https://vidsrc.me/tvshows/latest/page-' + pageNum + '.json';
-    var mediaType = 'tv';
-  }
+    // get some of the recent media from tmdb
 
-  fetch(url)
-    .then(response => response.json())
-    .then(data => {
-      idList = [];
-      for (var i = 0; i < data.result.length; i++) {
-        idList[i] = data.result[i].tmdb_id;
-      }
+    if (category == 'moviesPage') {
+      var url = 'https://api.themoviedb.org/3/discover/movie?page=' + pageNum + '&with_original_language=en&api_key=' + apiKey;
+      var mediaType = 'movie';
+    } else if (category == 'tvShowsPage') {
+      var url = 'https://api.themoviedb.org/3/discover/tv?page=' + pageNum + '&with_original_language=en&api_key=' + apiKey;
+      var mediaType = 'tv';
+    }
 
-      // Creating an array of fetch promises for each movie ID
-      const movieDetailsPromises = idList.map(id =>
-        fetch('https://api.themoviedb.org/3/' + mediaType + '/' + id + '?api_key=' + apiKey)
-          .then(response => response.json())
-      );
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
 
-      // Handling the resolved promises
-      Promise.all(movieDetailsPromises)
-        .then(movies => {
-          // first remove the loading posters
-          removeLoadingPosters(category);
-          var container = document.getElementById(category).querySelector('.container');
-          //container.innerHTML = ''; // Clear previous content
-          // Iterating over each movie to extract and log the cover URL
-          for (let i = 0; i < movies.length; i++) {
-            let movie = movies[i];
+        // remove the loading posters first
+        removeLoadingPosters(category);
+        var container = document.getElementById(category).querySelector('.container');
 
-            var title = movie.title || movie.name || data.result[i].title;
-            var quality = data.result[i].quality;
-            var imgURL = movie.poster_path;
+        // iterate through each result
+        for (let i = 0; i < data.results.length; i++) {
+          let movie = data.results[i];
 
-            var poster = makePosterDiv(idList[i], title, quality, imgURL, mediaType);
+          var title = movie.title || movie.name || "undefined title";
+          var quality = "";
+          var imgURL = movie.poster_path;
 
-            container.appendChild(poster);
-            container.dataset.lastpagenum = pageNum;
-          }
-          // set the loading status back to false
-          element.dataset.loading = 'false';
+          var poster = makePosterDiv(movie.id, title, quality, imgURL, mediaType);
+
+          container.appendChild(poster);
+          container.dataset.lastpagenum = pageNum;
+        }
+        // set the loading status back to false
+        element.dataset.loading = 'false';
+
+        // if there are no more media posters to be added, don't add the loading posters
+        if (data.page == data.total_pages) {
+          container.dataset.reachedfinalpage = 'true';
+        } else {
 
           // add more loading posters
           appendLoadingPosters(category);
-        })
-        .catch(error => console.error('Error fetching movie details:', error));
 
-    })
-    .catch(error => {
-      console.error(error);
-      alertMessage('Failed to get newly added media, server is down');
-    });
+        }
+
+      })
+      .catch(error => {
+        console.error(error);
+        alertMessage('Failed to get media from TMDB');
+      });
+
+
+
+  } else {
+
+    // use the vidsrc media server
+
+    if (category == 'moviesPage') {
+      var url = 'https://vidsrc.me/movies/latest/page-' + pageNum + '.json';
+      var mediaType = 'movie';
+    } else if (category == 'tvShowsPage') {
+      var url = 'https://vidsrc.me/tvshows/latest/page-' + pageNum + '.json';
+      var mediaType = 'tv';
+    }
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        idList = [];
+        for (var i = 0; i < data.result.length; i++) {
+          idList[i] = data.result[i].tmdb_id;
+        }
+
+        // Creating an array of fetch promises for each movie ID
+        const movieDetailsPromises = idList.map(id =>
+          fetch('https://api.themoviedb.org/3/' + mediaType + '/' + id + '?api_key=' + apiKey)
+            .then(response => response.json())
+        );
+
+        // Handling the resolved promises
+        Promise.all(movieDetailsPromises)
+          .then(movies => {
+            // first remove the loading posters
+            removeLoadingPosters(category);
+            var container = document.getElementById(category).querySelector('.container');
+            //container.innerHTML = ''; // Clear previous content
+            // Iterating over each movie to extract and log the cover URL
+            for (let i = 0; i < movies.length; i++) {
+              let movie = movies[i];
+
+              var title = movie.title || movie.name || data.result[i].title;
+              var quality = data.result[i].quality;
+              var imgURL = movie.poster_path;
+
+              var poster = makePosterDiv(idList[i], title, quality, imgURL, mediaType);
+
+              container.appendChild(poster);
+              container.dataset.lastpagenum = pageNum;
+            }
+            // set the loading status back to false
+            element.dataset.loading = 'false';
+
+            // add more loading posters
+            appendLoadingPosters(category);
+          })
+          .catch(error => console.error('Error fetching movie details:', error));
+
+      })
+      .catch(error => {
+        console.error(error);
+        alertMessage('Failed to get newly added media, server is down');
+      });
+
+  }
+
 }
 
 function loadMoreMedia() {
@@ -679,6 +740,11 @@ function loadMoreMedia() {
   var pageID = document.querySelector('#menubar > .active').id;
   var page = document.getElementById(pageID + 'Page').querySelector('.container');
   var lastPageNum = page.dataset.lastpagenum;
+  var reachedFinalPage = page.dataset.reachedfinalpage;
+  if (reachedFinalPage == 'true') {
+    //console.log('no more media to load')
+    return;
+  }
 
   getLatestMedia(lastPageNum + 1, pageID);
 }
@@ -1085,9 +1151,9 @@ function displayCertification(movieId, mediaType) {
         const usRelease = releaseData.results.find(country => country.iso_3166_1 === 'US');
         if (usRelease) {
           if (mediaType == 'movie') {
-            // Find the theatrical wide release (type === 3) with a non-empty certification
+            // Find the theatrical wide release (type !== 1 && type !== 2) with a non-empty certification
             const theatricalRelease = usRelease.release_dates.find(
-              release => release.type === 3 && release.certification && release.certification !== ""
+              release => release.type !== 1 && release.type !== 2 && release.certification && release.certification !== ""
             );
             if (theatricalRelease && theatricalRelease.certification) {
               var usCertification = theatricalRelease.certification;
@@ -3228,9 +3294,16 @@ function deselectEpisode() {
 function getSetting(setting) {
   // gets the specified setting from the local storage
 
+  // make sure saveWatchHistory is off for guest mode
+  if (getLocalStorage('username').includes("guest")) {
+    watchHistoryBool = false;
+  } else {
+    watchHistoryBool = true;
+  }
+
   var defaultValues = {
     autoStartTrailer: true,
-    saveWatchHistory: true,
+    saveWatchHistory: watchHistoryBool,
     showDeselectEpisode: false,
     zoom: 100,
     defaultServer: 3
@@ -3269,11 +3342,11 @@ function executeSettings() {
   var btn1 = container.querySelector('input:nth-of-type(1)');
   var btn2 = container.querySelector('input:nth-of-type(2)');
   if (getSetting('autoStartTrailer')) {
-    btn2.removeAttribute('checked');
-    btn1.setAttribute('checked', true);
+    btn2.checked = false;
+    btn1.checked = true;
   } else {
-    btn1.removeAttribute('checked');
-    btn2.setAttribute('checked', true);
+    btn1.checked = false;
+    btn2.checked = true;
   }
 
   // adjust saveWatchHistory buttons
@@ -3281,11 +3354,11 @@ function executeSettings() {
   var btn1 = container.querySelector('input:nth-of-type(1)');
   var btn2 = container.querySelector('input:nth-of-type(2)');
   if (getSetting('saveWatchHistory')) {
-    btn2.removeAttribute('checked');
-    btn1.setAttribute('checked', true);
+    btn2.checked = false;
+    btn1.checked = true;
   } else {
-    btn1.removeAttribute('checked');
-    btn2.setAttribute('checked', true);
+    btn1.checked = false;
+    btn2.checked = true;
   }
 
   // adjust showDeselectEpisode buttons
@@ -3293,11 +3366,11 @@ function executeSettings() {
   var btn1 = container.querySelector('input:nth-of-type(1)');
   var btn2 = container.querySelector('input:nth-of-type(2)');
   if (getSetting('showDeselectEpisode')) {
-    btn2.removeAttribute('checked');
-    btn1.setAttribute('checked', true);
+    btn2.checked = false;
+    btn1.checked = true;
   } else {
-    btn1.removeAttribute('checked');
-    btn2.setAttribute('checked', true);
+    btn1.checked = false;
+    btn2.checked = true;
   }
 
   // adjust defaultServer buttons
@@ -3311,10 +3384,16 @@ function executeSettings() {
   for (var i = 0; i < serverList.length; i++) {
     var btn = serverList[i];
     if (i == selection) {
-      btn.setAttribute('checked', true);
+      btn.checked = true;
     } else {
-      btn.removeAttribute('checked');
+      btn.checked = false;
     }
+  }
+
+  // make sure that the guest user's saveWatchHistory setting revery back to normal
+  if (getLocalStorage('username').includes('guest') && getSetting('saveWatchHistory') == true) {
+    alertMessage("Users in guest mode cannot change the watch history setting");
+    setSetting('saveWatchHistory', false);
   }
 
 }
