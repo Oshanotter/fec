@@ -274,6 +274,7 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
     overflow: hidden;
     text-overflow: ellipsis;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     margin-bottom: 0.5em;
   }
 }
@@ -285,6 +286,27 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
   border: 2px solid var(--mflixWhite);
   /* animate the transition from not hovering to hovering */
   transition: all 0.3s ease;
+}
+
+.viewMorePoster {
+  span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--mflixWhite);
+    background: radial-gradient(rgba(255, 255, 255, 0), rgba(75, 75, 75, 0.8));
+    font-size: 1.3em;
+  }
+}
+
+.viewMorePoster:hover {
+  background: rgba(255, 255, 255, 0) !important;
+  border: 2px solid rgba(255, 255, 255, 0) !important;
+
+  span {
+    background: rgba(51, 51, 51, 0.8);
+    border: 2px solid var(--mflixOrange);
+  }
 }
 
 .posterListButtons {
@@ -331,6 +353,38 @@ BELOW ARE ELEMENTS RELATING TO THE MAIN PAGES AND THE CONTAINERS
   }
 }
 
+#homePageGenresContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+}
+
+#homePageGenreButtonContainer {
+  width: 90%;
+  margin: 1em 0em;
+  display: flex;
+  gap: 1rem;
+
+  .button {
+    flex: 1 1 0;
+    background-color: var(--mflixGrey);
+    padding: 1em;
+    border-radius: 15px;
+    min-width: 15%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .active {
+    background-color: var(--mflixOrange);
+  }
+}
+
+.genresContiner {
+  width: 100%;
+}
+
 /*
 
 BELOW ARE ELEMENTS RELATING TO THE INFO PAGE
@@ -361,6 +415,7 @@ BELOW ARE ELEMENTS RELATING TO THE INFO PAGE
     overflow: hidden;
     text-overflow: ellipsis;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }
 
@@ -552,6 +607,7 @@ BELOW ARE ELEMENTS RELATING TO THE BUTTON CONTAINER
           overflow: hidden;
           text-overflow: ellipsis;
           -webkit-line-clamp: 1;
+          line-clamp: 1;
         }
 
         .button {
@@ -873,6 +929,7 @@ BELOW ARE ELEMENTS RELATING TO THE SEARCH FUNCTIONALITY
     overflow: hidden;
     text-overflow: ellipsis;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 }
 

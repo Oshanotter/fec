@@ -14,6 +14,8 @@ function main() {
   appendLoadingPosters('moviesPage');
   appendLoadingPosters('tvShowsPage', 20);
   appendLoadingPosters('tvShowsPage');
+  appendLoadingPosters('genresPage', 20);
+  appendLoadingPosters('genresPage');
 
   var movieHistory = document.getElementById('loadingMoviesHistory');
   appendLoadingPosters(movieHistory, 10);
@@ -228,7 +230,12 @@ function loadPageFromUrlHash() {
 
     } else if (id.includes('page-')) {
       var page = id.substring(5); // remove the first 5 characters, which are 'page-'
-      displayPage(page);
+      if (page.includes('genresPage')) {
+        var params = page.split("-");
+        showGenresPage(decodeURIComponent(params[1]), params[2], params[3], 1);
+      } else {
+        displayPage(page);
+      }
 
     } else if (id.includes('watch-')) {
       var parts = id.split('-');
@@ -502,7 +509,7 @@ function displayPage(pageID) {
   }
 
   // find the right page and make it visible, but hide the others
-  var pageList = ['searchPage', 'homePage', 'moviesPage', 'tvShowsPage', 'myListsPage', 'settingsPage'];
+  var pageList = ['searchPage', 'homePage', 'moviesPage', 'tvShowsPage', 'myListsPage', 'genresPage', 'settingsPage'];
   for (var i = 0; i < pageList.length; i++) {
     var id = pageList[i];
     var page = document.getElementById(id);
@@ -522,7 +529,8 @@ function loadPageContent(category) {
       return; // don't load the content again
     }
 
-    var url = 'https://api.themoviedb.org/3/discover/movie?api_key=' + apiKey + '&language=en-US&sort_by=popularity.desc&include_adult=false';
+    //var url = 'https://api.themoviedb.org/3/discover/movie?api_key=' + apiKey + '&language=en-US&sort_by=popularity.desc&include_adult=false';
+    var url = 'https://api.themoviedb.org/3/trending/all/day?api_key=' + apiKey + '&language=en-US';
     fetch(url)
       .then(response => response.json())
       .then(data => {
@@ -530,7 +538,15 @@ function loadPageContent(category) {
         container.innerHTML = ''; // Clear previous content
 
         data.results.forEach(item => {
-          var poster = makePosterDiv(item.id, item.title, "", item.poster_path, "movie");
+          if (item.original_language != "en") {
+            return;
+          }
+          if (item.media_type == "movie") {
+            var qualityTag = "Movie";
+          } else {
+            var qualityTag = "TV";
+          }
+          var poster = makePosterDiv(item.id, item.title || item.name, qualityTag, item.poster_path, item.media_type);
           container.appendChild(poster);
         });
 
@@ -539,6 +555,21 @@ function loadPageContent(category) {
 
         // show that the content is already loaded
         container.dataset.loaded = "true";
+
+        // load some movie and tv show genres
+        var homePageGenresContainer = document.getElementById('homePageGenresContainer');
+        var buttonsContainer = document.createElement('div');
+        buttonsContainer.id = "homePageGenreButtonContainer";
+        buttonsContainer.innerHTML = '<div class="button active" onclick="toggleHomepageGenres(' + "'movie'" + ')">Movies By Genre</div><div class="button" onclick="toggleHomepageGenres(' + "'tv'" + ')">TV Shows By Genre</div>';
+        homePageGenresContainer.appendChild(buttonsContainer);
+
+        // create seperate containers for movies and tv shows genres
+        var movieGenresContainer = document.createElement('div');
+        var tvShowGenresContainer = document.createElement('div');
+        movieGenresContainer.classList.add('genresContiner');
+        tvShowGenresContainer.classList.add('genresContiner', 'hidden');
+        homePageGenresContainer.appendChild(movieGenresContainer);
+        homePageGenresContainer.appendChild(tvShowGenresContainer);
 
         var genreDict = {
           10751: "Family Movies",
@@ -561,7 +592,32 @@ function loadPageContent(category) {
           var pageNum = getRandomNumber(2, 50);
           var url = 'https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&page=' + pageNum + '&region=US&release_date.lte=' + currentDate + '&sort_by=popularity.desc&with_genres=' + genreId + '&with_origin_country=US&with_original_language=en&api_key=' + apiKey;
           var mediaType = 'movie';
-          createHorizontalList(title, url, mediaType, container, '');
+          createHorizontalList(title, url, mediaType, movieGenresContainer, '', genreId, pageNum);
+        }
+
+        // do the same thing for tv shows
+        var genreDict = {
+          10751: "Family TV Shows",
+          10759: "Action & Adventure TV Shows",
+          16: "Animation TV Shows",
+          9648: "Mystery TV Shows",
+          10765: "Sci-Fi & Fantasy TV Shows",
+          10764: "Reality TV Shows",
+          80: "Crime TV Shows",
+          18: "Drama TV Shows",
+          35: "Comedy TV Shows"
+        };
+
+        var currentDate = new Date().toISOString().split('T')[0]; // get current date in YYYY-MM-DD format
+
+        var keys = Object.keys(genreDict);
+        for (var i = 0; i < keys.length; i++) {
+          var genreId = keys[i];
+          var title = genreDict[genreId];
+          var pageNum = getRandomNumber(2, 50);
+          var url = 'https://api.themoviedb.org/3/discover/tv?include_adult=false&include_video=false&language=en-US&page=' + pageNum + '&region=US&release_date.lte=' + currentDate + '&sort_by=popularity.desc&with_genres=' + genreId + '&with_origin_country=US&with_original_language=en&api_key=' + apiKey;
+          var mediaType = 'tv';
+          createHorizontalList(title, url, mediaType, tvShowGenresContainer, '', genreId, pageNum);
         }
 
       })
@@ -600,6 +656,29 @@ function loadPageContent(category) {
   }
 }
 
+function toggleHomepageGenres(mediaType) {
+  // toggles the visibility of the horizontal lists for either movie or tv shows genres
+
+  if (mediaType == 'movie') {
+    var activeButton = document.querySelector("#homePageGenreButtonContainer > div.button:nth-child(2)");
+    var inactiveButton = document.querySelector("#homePageGenreButtonContainer > div.button:nth-child(1)");
+    var activeContainer = document.querySelectorAll(".genresContiner")[1];
+    var inactiveContainer = document.querySelectorAll(".genresContiner")[0];
+  } else if (mediaType == 'tv') {
+    var activeButton = document.querySelector("#homePageGenreButtonContainer > div.button:nth-child(1)");
+    var inactiveButton = document.querySelector("#homePageGenreButtonContainer > div.button:nth-child(2)");
+    var activeContainer = document.querySelectorAll(".genresContiner")[0];
+    var inactiveContainer = document.querySelectorAll(".genresContiner")[1];
+  }
+
+  // switch which media type is active for the genres
+  activeButton.classList.remove('active');
+  inactiveButton.classList.add('active');
+  activeContainer.classList.add('hidden');
+  inactiveContainer.classList.remove('hidden');
+
+}
+
 
 
 // functions for loading the movie and tv posters
@@ -626,6 +705,12 @@ function getLatestMedia(pageNum = 1, category) {
     } else if (category == 'tvShowsPage') {
       var url = 'https://api.themoviedb.org/3/discover/tv?page=' + pageNum + '&with_original_language=en&api_key=' + apiKey;
       var mediaType = 'tv';
+    } else if (category == 'genresPage') {
+      var mediaType = element.dataset.mediaType;
+      var genreId = element.dataset.genreId;
+      var currentDate = new Date().toISOString().split('T')[0]; // get current date in YYYY-MM-DD format
+      var url = 'https://api.themoviedb.org/3/discover/' + mediaType + '?include_adult=false&include_video=false&language=en-US&page=' + pageNum + '&region=US&release_date.lte=' + currentDate + '&sort_by=popularity.desc&with_genres=' + genreId + '&with_origin_country=US&with_original_language=en&api_key=' + apiKey;
+
     }
 
     fetch(url)
@@ -920,7 +1005,7 @@ function adjustPosterSpacing() {
   }
 }
 
-async function createHorizontalList(title, url, mediaType, container, label) {
+async function createHorizontalList(title, url, mediaType, container, label, genreId, pageNum) {
   // creates a list in the container that is specified
 
   // generate a new list
@@ -943,7 +1028,7 @@ async function createHorizontalList(title, url, mediaType, container, label) {
     let item = media[i];
 
     var id = item.id;
-    var title = item.title || item.name;
+    var mediaTitle = item.title || item.name;
     if (label != undefined) {
       var qualityDiv = label;
     } else if (mediaType == 'tv') {
@@ -954,11 +1039,30 @@ async function createHorizontalList(title, url, mediaType, container, label) {
     var imgURL = item.poster_path;
 
     // make the poster with the info, plus add an overlay that will move the media in the list
-    let poster = makePosterDiv(id, title, qualityDiv, imgURL, mediaType);
+    let poster = makePosterDiv(id, mediaTitle, qualityDiv, imgURL, mediaType);
 
     scrollContainer.appendChild(poster);
   }
 
+  // add a poster to the end that will display more movies from that genre
+  var mainElm = document.createElement('div');
+  mainElm.classList.add('posterContainer');
+  mainElm.classList.add('viewMorePoster');
+  mainElm.classList.add('button');
+
+  var qaulityElm = document.createElement('div');
+  var titleElm = document.createElement('div');
+  var span = document.createElement('span');
+  span.innerText = "View More\n\n➔";
+
+  mainElm.appendChild(span);
+  mainElm.appendChild(qaulityElm);
+  mainElm.appendChild(titleElm);
+  mainElm.onclick = function () {
+    // load more media of this type
+    showGenresPage(title, mediaType, genreId, pageNum + 1);
+  };
+  scrollContainer.appendChild(mainElm);
 
   // append the list to the container
   container.appendChild(newList);
@@ -968,6 +1072,32 @@ async function createHorizontalList(title, url, mediaType, container, label) {
 
 }
 
+function showGenresPage(genreName, mediaType, genreId, pageNum) {
+  // displays a page for a specific genre under either the movies or tv shows tab
+
+  var genresPage = document.getElementById('genresPage');
+  var element = genresPage.querySelector('.container');
+  element.innerHTML = "";
+  appendLoadingPosters('genresPage', 20);
+  appendLoadingPosters('genresPage');
+  genresPage.scrollTo(0, 0);
+
+  displayPage('genresPage');
+
+  // update the page hash
+  window.location.hash = "page-genresPage-" + genreName + "-" + mediaType + "-" + genreId;
+
+  // make sure to update the media type
+  var genresPage = document.getElementById('genresPage');
+  var genreTitleTag = genresPage.querySelector('h2');
+  genreTitleTag.innerText = genreName;
+
+
+  element.dataset.mediaType = mediaType;
+  element.dataset.genreId = genreId;
+
+  getLatestMedia(pageNum, 'genresPage');
+}
 
 
 // functions that display or get info for the infoPage
@@ -1102,7 +1232,8 @@ function displayReleaseDate(inputDate) {
   if (inputDate == null || inputDate == undefined || inputDate == "") {
     var releaseText = "Not Yet Released";
   } else {
-    var releaseDate = new Date(inputDate);
+    const [year, month, day] = inputDate.split("-");
+    var releaseDate = new Date(year, month - 1, day);
     var options = {
       year: 'numeric',
       month: 'short',
@@ -3195,8 +3326,9 @@ function populateEpisodesDropdown(list, lastEpisodeDict, nextEpisodeDict) {
 
       if (nextEpisodeDict && seasonNumber == nextEpisodeDict.season_number) {
         // if the next episode to air is in this season, create a new episode element with the air date
+        const [year, month, day] = nextEpisodeDict.air_date.split("-");
         var nextEpElem = document.createElement('div');
-        nextEpElem.innerText = "E" + nextEpisodeDict.episode_number + " Airing " + new Date(nextEpisodeDict.air_date).toLocaleDateString("en-US", {
+        nextEpElem.innerText = "E" + nextEpisodeDict.episode_number + " Airing " + new Date(year, month - 1, day).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric"
@@ -3439,7 +3571,7 @@ function setZoom(zoomLevel) {
 function addScrollListeners() {
   // add listeners to the movies and tv shows elements so that when the user scrolls to the bottom, more media loads
 
-  var pages = ['moviesPage', 'tvShowsPage'];
+  var pages = ['moviesPage', 'tvShowsPage', 'genresPage'];
   for (var i = 0; i < pages.length; i++) {
     (function () {
       var pageId = pages[i];

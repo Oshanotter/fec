@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1, initial-scale=1, minimal-ui, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, minimum-scale=1, initial-scale=1, minimal-ui, viewport-fit=cover">
     <title>Mflix</title>
     <!--- include the following script to make the youtube player work--->
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -20,7 +21,8 @@
 
 
     <div id="header">
-        <img src="icons/logo.png" alt="logo" onclick="document.location.href = document.location.origin + document.location.pathname;">
+        <img src="icons/logo.png" alt="logo"
+            onclick="document.location.href = document.location.origin + document.location.pathname;">
         <div>
             <div>user.name</div>
             <img src="icons/general/account_circle.svg">
@@ -48,19 +50,20 @@
     </div>
 
     <div id="homePage" class="main">
-        <h2>Trending Movies</h2>
+        <h2>Trending Movies & TV</h2>
         <div class="container" data-loaded="false"></div>
+        <div id="homePageGenresContainer"></div>
         <div class="spacer"></div>
     </div>
 
     <div id="moviesPage" class="main hidden">
-        <h2>Newly Added Movies</h2>
+        <h2>Popular Movies</h2>
         <div class="container" data-lastpagenum="0" data-loading="false"></div>
         <div class="spacer"></div>
     </div>
 
     <div id="tvShowsPage" class="main hidden">
-        <h2>Newly Added TV Shows</h2>
+        <h2>Popular TV Shows</h2>
         <div class="container" data-lastpagenum="0" data-loading="false"></div>
         <div class="spacer"></div>
     </div>
@@ -68,8 +71,10 @@
     <div id="myListsPage" class="main hidden">
         <h2>My Lists</h2>
         <div>
-            <div class="button active" onclick="showList('watchLists')"><img src="icons/general/list.svg" alt="list">Watch Lists</div>
-            <div class="button" onclick="showList('history')"><img src="icons/general/history.svg" alt="history">History</div>
+            <div class="button active" onclick="showList('watchLists')"><img src="icons/general/list.svg"
+                    alt="list">Watch Lists</div>
+            <div class="button" onclick="showList('history')"><img src="icons/general/history.svg" alt="history">History
+            </div>
         </div>
         <div class="container">
             <div class="listContainer">
@@ -78,9 +83,11 @@
             </div>
         </div>
         <div id="listEditContainer" class="hidden">
-            <div class="button" onclick="createNewList()"><img src="icons/general/add.svg" alt="create">Create List</div>
+            <div class="button" onclick="createNewList()"><img src="icons/general/add.svg" alt="create">Create List
+            </div>
             <div class="button" onclick="editLists()"><img src="icons/general/edit.svg" alt="edit">Edit Lists</div>
-            <div class="button hidden" onclick="saveLists()"><img src="icons/general/save.svg" alt="save">Save Lists</div>
+            <div class="button hidden" onclick="saveLists()"><img src="icons/general/save.svg" alt="save">Save Lists
+            </div>
         </div>
         <div class="container hidden">
             <div class="listContainer">
@@ -102,8 +109,15 @@
         </div>
         <div id="historyEditContainer" class="hidden">
             <div class="button" onclick="editHistory()"><img src="icons/general/edit.svg" alt="edit">Edit History</div>
-            <div class="button hidden" onclick="saveHistory()"><img src="icons/general/save.svg" alt="save">Save History</div>
+            <div class="button hidden" onclick="saveHistory()"><img src="icons/general/save.svg" alt="save">Save History
+            </div>
         </div>
+        <div class="spacer"></div>
+    </div>
+
+    <div id="genresPage" class="main hidden">
+        <h2>Genres</h2>
+        <div class="container" data-lastpagenum="0" data-loading="false"></div>
         <div class="spacer"></div>
     </div>
 
@@ -114,27 +128,33 @@
                 <h4>
                     Auto Start Trailer:
                 </h4>
-                <input type="radio" name="autoStartTrailer" value="yes" class="button" onclick="setSetting('autoStartTrailer', true)">
+                <input type="radio" name="autoStartTrailer" value="yes" class="button"
+                    onclick="setSetting('autoStartTrailer', true)">
                 <label>Yes</label>
-                <input type="radio" name="autoStartTrailer" value="no" class="button" onclick="setSetting('autoStartTrailer', false)">
+                <input type="radio" name="autoStartTrailer" value="no" class="button"
+                    onclick="setSetting('autoStartTrailer', false)">
                 <label>No</label>
             </div>
             <div id="saveWatchHistoryContainer" class="settingContainer">
                 <h4>
                     Save Watch History:
                 </h4>
-                <input type="radio" name="saveWatchHistory" value="yes" class="button" onclick="setSetting('saveWatchHistory', true)">
+                <input type="radio" name="saveWatchHistory" value="yes" class="button"
+                    onclick="setSetting('saveWatchHistory', true)">
                 <label>Yes</label>
-                <input type="radio" name="saveWatchHistory" value="no" class="button" onclick="setSetting('saveWatchHistory', false)">
+                <input type="radio" name="saveWatchHistory" value="no" class="button"
+                    onclick="setSetting('saveWatchHistory', false)">
                 <label>No</label>
             </div>
             <div id="showDeselectEpisodeContainer" class="settingContainer">
                 <h4>
                     Show Deselect Episode Button:
                 </h4>
-                <input type="radio" name="showDeselectEpisode" value="yes" class="button" onclick="setSetting('showDeselectEpisode', true)">
+                <input type="radio" name="showDeselectEpisode" value="yes" class="button"
+                    onclick="setSetting('showDeselectEpisode', true)">
                 <label>Yes</label>
-                <input type="radio" name="showDeselectEpisode" value="no" class="button" onclick="setSetting('showDeselectEpisode', false)">
+                <input type="radio" name="showDeselectEpisode" value="no" class="button"
+                    onclick="setSetting('showDeselectEpisode', false)">
                 <label>No</label>
             </div>
             <div class="settingContainer">
@@ -150,19 +170,23 @@
                     Default Server:
                 </h4>
                 <div class="btnContainer">
-                    <input type="radio" name="defaultServer" value="1" class="button" onclick="setSetting('defaultServer', 1)">
+                    <input type="radio" name="defaultServer" value="1" class="button"
+                        onclick="setSetting('defaultServer', 1)">
                     <label>1 - me</label>
                 </div>
                 <div class="btnContainer">
-                    <input type="radio" name="defaultServer" value="2" class="button" onclick="setSetting('defaultServer', 2)">
+                    <input type="radio" name="defaultServer" value="2" class="button"
+                        onclick="setSetting('defaultServer', 2)">
                     <label>2 - to</label>
                 </div>
                 <div class="btnContainer">
-                    <input type="radio" name="defaultServer" value="3" class="button" onclick="setSetting('defaultServer', 3)">
+                    <input type="radio" name="defaultServer" value="3" class="button"
+                        onclick="setSetting('defaultServer', 3)">
                     <label>3 - cc</label>
                 </div>
                 <div class="btnContainer">
-                    <input type="radio" name="defaultServer" value="4" class="button" onclick="setSetting('defaultServer', 4)">
+                    <input type="radio" name="defaultServer" value="4" class="button"
+                        onclick="setSetting('defaultServer', 4)">
                     <label>4 - icu</label>
                 </div>
             </div>
@@ -211,14 +235,17 @@
                 </table>
             </div>
             <div id="descriptionContainer" class="flex">
-                <div id="descriptionContent">Description of the movie or series. This should be a few sentences long. Some descriptions are longer than others though.</div>
+                <div id="descriptionContent">Description of the movie or series. This should be a few sentences long.
+                    Some descriptions are longer than others though.</div>
             </div>
             <div id="buttonContainer" class="noFlex">
                 <div id="playButton" class="button" onclick=""><img src="icons/general/play_arrow.svg">
                     <div>Play</div>
                 </div>
-                <div id="resumeButton" class="button hidden" onclick="resumeMedia()"><img src="icons/general/resume.svg">Resume</div>
-                <div id="episodesButton" class="button hidden" onclick="dropdownEpisodeSelector()"><img src="icons/general/episodes.svg">Episodes</div>
+                <div id="resumeButton" class="button hidden" onclick="resumeMedia()"><img
+                        src="icons/general/resume.svg">Resume</div>
+                <div id="episodesButton" class="button hidden" onclick="dropdownEpisodeSelector()"><img
+                        src="icons/general/episodes.svg">Episodes</div>
                 <div id="episodesDropdown" class="hidden">
                     <div>
                         <div class="loadingWave">Loading Last Watched Episode...</div>
@@ -226,10 +253,12 @@
                             <div></div>
                             <div></div>
                         </div>
-                        <div id="showDeselectEpisode" class="button hidden" onclick="deselectEpisode()">Deselect Episode</div>
+                        <div id="showDeselectEpisode" class="button hidden" onclick="deselectEpisode()">Deselect Episode
+                        </div>
                     </div>
                 </div>
-                <div id="addToListButton" class="button" onclick="dropdownAddToListMenu()"><img src="icons/general/playlist_add.svg">Add To List</div>
+                <div id="addToListButton" class="button" onclick="dropdownAddToListMenu()"><img
+                        src="icons/general/playlist_add.svg">Add To List</div>
                 <div id="addToListDropdown" class="hidden">
                     <div>
                         <div>
@@ -239,10 +268,12 @@
                             <div class="hidden onList">
                                 <input type="text" placeholder="New List Name" value="">
                                 <div class="button">
-                                    <img src="icons/general/delete.svg" alt="delete" onclick="removeCreateButtonOnDropdown('delete')">
+                                    <img src="icons/general/delete.svg" alt="delete"
+                                        onclick="removeCreateButtonOnDropdown('delete')">
                                 </div>
                                 <div class="button">
-                                    <img src="icons/general/save.svg" alt="save" onclick="removeCreateButtonOnDropdown('save')">
+                                    <img src="icons/general/save.svg" alt="save"
+                                        onclick="removeCreateButtonOnDropdown('save')">
                                 </div>
                             </div>
                             <div onclick="createNewListOnInfoPage()" class="button hidden">
@@ -256,7 +287,8 @@
                     <div id="stopTrailer" class="button" onclick="startTrailer()">Start Trailer</div>
                     <div id="restartTrailer" class="button" onclick="restartTrailer()">Restart Trailer</div>
                 </div>
-                <div id="backButton" class="button" onclick="resetInfoPage()"><img src="icons/general/arrow_back.svg">Back</div>
+                <div id="backButton" class="button" onclick="resetInfoPage()"><img
+                        src="icons/general/arrow_back.svg">Back</div>
             </div>
         </div>
         <div id="infoSplit2">
