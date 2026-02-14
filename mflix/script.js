@@ -463,6 +463,8 @@ function login(username, passwordHash) {
       setLocalStorage("password", passwordHash);
       setLocalStorage("Mflix.apiKey", key);
       authenticate();
+      // adjust the page to reflect the current settings
+      executeSettings();
     });
 }
 
@@ -1850,16 +1852,16 @@ function selectServer(index, mediaType, id, season, episode) {
     tv: "https://vidsrc.me/embed/tv?tmdb=<id>&season=<s>&episode=<e>"
   },
   {
-    movie: "https://vidsrc.to/embed/movie/<id>",
-    tv: "https://vidsrc.to/embed/tv/<id>/<s>/<e>"
+    movie: "https://vidfast.pro/movie/<id>?autoPlay=true&title=false",
+    tv: "https://vidfast.pro/tv/<id>/<s>/<e>?autoPlay=true&title=false"
   },
   {
     movie: "https://vidsrc.cc/v2/embed/movie/<id>?autoplay=true",
     tv: "https://vidsrc.cc/v2/embed/tv/<id>/<s>/<e>?autoplay=true"
   },
   {
-    movie: "https://vidsrc.icu/embed/movie/<id>",
-    tv: "https://vidsrc.icu/embed/tv/<id>/<s>/<e>"
+    movie: "https://embos.net/movie/?mid=<id>",
+    tv: "https://embos.net/tv/?mid=<id>&s=<s>&e=<e>"
   }
   ];
 
@@ -1893,7 +1895,7 @@ function selectServer(index, mediaType, id, season, episode) {
 
   // if the season and episode numbers are undefined, use the server without specifing them
   if (!seasonNum || !episodeNum) {
-    var url = url.split('<id>')[0] + id;
+    var url = url.replace('<id>', id)
   } else {
     var url = url.replace('<id>', id).replace('<s>', seasonNum).replace('<e>', episodeNum);
   }
@@ -3244,17 +3246,24 @@ function populateEpisodesDropdown(list, lastEpisodeDict, nextEpisodeDict) {
   var episodesContainer = document.querySelector("#episodesDropdown > div > div:nth-child(2) > div:nth-child(2)");
   episodesContainer.innerHTML = '';
 
+  var seasonNum = 0; // initalize seasonNum to 0 to make the next episode air date element appear
+
   // loop to create each season that is avalible
   for (var i = 0; i < list.length; i++) {
     let dict = list[i];
 
     let seasonNumber = dict.season_number;
-    var seasonNum = dict.season_number;
-    let lastAiredSeason = lastEpisodeDict.season_number;
+    let lastAiredSeason
+    if (lastEpisodeDict) {
+      lastAiredSeason = lastEpisodeDict.season_number;
+    } else {
+      lastAiredSeason = 0;
+    }
     if (seasonNumber == 0 || seasonNumber > lastAiredSeason) {
       continue; // skip the season if it is a special or if it hasn't aired yet
     }
 
+    var seasonNum = dict.season_number; // update the value of seasonNum to refelct the newest episode's season
     let numEpisodes = dict.episode_count;
 
     // create the button for each season
@@ -3343,17 +3352,18 @@ function populateEpisodesDropdown(list, lastEpisodeDict, nextEpisodeDict) {
 
   }
 
-
-  if (nextEpisodeDict && seasonNum != nextEpisodeDict.season_number) {
+  if (nextEpisodeDict && seasonNum < nextEpisodeDict.season_number) {
     // if the next episode to air is in the next season, create a new season element with the air date
+    const [year, month, day] = nextEpisodeDict.air_date.split("-");
     var nextSeasonElem = document.createElement('div');
-    nextSeasonElem.innerText = "S" + nextEpisodeDict.season_number + " Airing " + new Date(nextEpisodeDict.air_date).toLocaleDateString("en-US", {
+    nextSeasonElem.innerText = "S" + nextEpisodeDict.season_number + " Airing " + new Date(year, month - 1, day).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric"
     });
     nextSeasonElem.classList.add('nextEpAirDate');
     seasonsContainer.appendChild(nextSeasonElem);
+    console.log(nextSeasonElem)
   }
 
 }
