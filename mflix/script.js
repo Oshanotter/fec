@@ -7,6 +7,9 @@ var selectedServer = null;
 
 // main function
 function main() {
+  // load the YouTube API first
+  loadYouTubeAPI();
+
   // add loading posters to each page before the actual media loads
   appendLoadingPosters('homePage', 20);
   appendLoadingPosters('homePage');
@@ -413,7 +416,8 @@ function login(username, passwordHash) {
 
   // disable the inputs
   document.getElementById("username").setAttribute('disabled', true);
-  document.getElementById("password").setAttribute('disabled', true)
+  document.getElementById("password").setAttribute('disabled', true);
+  document.querySelector("#loginPage > div.button").classList.add('disabled');
 
   // get the loginPage and error message div
   var loginPage = document.getElementById('loginPage');
@@ -432,6 +436,10 @@ function login(username, passwordHash) {
     if (!username || !password) {
       //displayPopup('username and password required');
       errorMsgDiv.innerText = "Username and Password Required";
+      document.getElementById("username").removeAttribute('disabled');
+      document.getElementById("password").removeAttribute('disabled');
+      // re-enable the login button
+      document.querySelector("#loginPage > div.button").classList.remove('disabled');
       return;
     }
     var passwordHash = stringToHash(password);
@@ -457,6 +465,8 @@ function login(username, passwordHash) {
         loadingGif.classList.add('hidden');
         document.getElementById("username").removeAttribute('disabled');
         document.getElementById("password").removeAttribute('disabled');
+        // re-enable the login button
+        document.querySelector("#loginPage > div.button").classList.remove('disabled');
         return;
       }
       setLocalStorage("username", username);
@@ -1437,6 +1447,13 @@ function resetInfoPage() {
 
 
 // functions that use the YouTube player
+function loadYouTubeAPI() {
+  // load the script to make the YouTube API work
+  const tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
+}
+
 function onYouTubeIframeAPIReady() {
   // this function creates an <iframe> for the youtube player after the API code downloads
 
@@ -1521,9 +1538,16 @@ function onTrailerError(event) {
 function startTrailer(trailerID) {
   // start the trailer with the given id or use the existing video in the player
 
+  if (!trailerPlayer) {
+    return;
+  }
+
   clearTimeout(trailerPlayerTimeout); // clear the timeout so that the trailer doesn't start over
   var playerElement = document.getElementById('ytTrailerPlayer');
   playerElement.style.display = 'block';
+
+  console.log(trailerID)
+  console.log(trailerPlayer)
 
   if (trailerID) {
     // if the trailer id exists, load the player with the new video, otherwise play the existing video
@@ -1572,6 +1596,9 @@ async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
 
 
   try {
+    // getting the direct source no longer works, throw an error to make things quicker
+    throw new Error("Getting direct source url no longer works.");
+
     // get the vidsrc id from tmdb id
     var vidsrcID = await getVidsrcId(tmdbID);
     var sourcesDict = await getSources(vidsrcID);
@@ -1586,7 +1613,7 @@ async function preLoadMedia(tmdbID, mediaType, seasonNum, episodeNum) {
     } else {
       var sourceURL = sourceURL + "?autostart=true";
     }
-  } catch {
+  } catch (e) {
     // when getting the direct source fails, use the regular sources
     var sourceURL = null;
   }
@@ -3363,7 +3390,6 @@ function populateEpisodesDropdown(list, lastEpisodeDict, nextEpisodeDict) {
     });
     nextSeasonElem.classList.add('nextEpAirDate');
     seasonsContainer.appendChild(nextSeasonElem);
-    console.log(nextSeasonElem)
   }
 
 }
@@ -3448,7 +3474,7 @@ function getSetting(setting) {
     saveWatchHistory: watchHistoryBool,
     showDeselectEpisode: false,
     zoom: 100,
-    defaultServer: 3
+    defaultServer: 2
   }
 
   var value = getLocalStorage('Mflix.settings.' + setting);
@@ -3697,7 +3723,7 @@ function addLoginPageListeners() {
 
   // add an event listener for the username
   document.getElementById("username").addEventListener("keydown", function (event) {
-    if (event.key === "Enter") { // Check if the Enter key is pressed
+    if (event.key === "Enter" || event.key === "ArrowDown") { // Check if the Enter key is pressed
       // focus on the password
       document.getElementById("password").focus();
     }
@@ -3709,6 +3735,10 @@ function addLoginPageListeners() {
       // login and blur
       document.getElementById("password").blur();
       login();
+
+    } else if (event.key === "ArrowUp") {
+      // focus on the username
+      document.getElementById("username").focus();
     }
   });
 
